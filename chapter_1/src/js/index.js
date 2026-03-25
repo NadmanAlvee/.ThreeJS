@@ -7,6 +7,9 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.append(renderer.domElement);
 
+// debug
+console.log(window.devicePixelRatio);
+
 // create scene
 const scene = new THREE.Scene();
 
@@ -53,23 +56,14 @@ const gridHelper = new THREE.GridHelper(30);
 scene.add(gridHelper);
 
 // sphere
-const sphereGeometry = new THREE.SphereGeometry(10, 50, 50);
+const sphereGeometry = new THREE.SphereGeometry(2, 20, 20);
 const sphereMaterial = new THREE.MeshStandardMaterial({
-  color: 0xff00ff,
-  wireframe: true,
-});
-const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
-// scene.add(sphereMesh);
-
-// sphere 2
-const sphereGeometry2 = new THREE.SphereGeometry(5, 50, 50);
-const sphereMaterial2 = new THREE.MeshStandardMaterial({
   color: 0xff00ff,
   // wireframe: true,
 });
-const sphereMesh2 = new THREE.Mesh(sphereGeometry2, sphereMaterial2);
-sphereMesh2.position.x = 10;
-scene.add(sphereMesh2);
+const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+sphereMesh.position.x = 10;
+scene.add(sphereMesh);
 
 // dat gui
 const gui = new dat.GUI();
@@ -78,25 +72,24 @@ const options = {
   sphereColor: "#ffea00",
   wireframe: false,
   bouncingStep: 0,
-  bouncingSpeed: 0.05,
-  // sphereRadius: 5,
+  bouncingSpeed: 0.01,
 };
 
-const SphereMesh2GUI = gui.addFolder("SphereMesh2");
+const sphereMeshGUI = gui.addFolder("sphereMesh");
 
-SphereMesh2GUI.addColor(options, "sphereColor").onChange((value) => {
-  sphereMesh2.material.setValues({ color: value });
+sphereMeshGUI.addColor(options, "sphereColor").onChange((value) => {
+  sphereMesh.material.setValues({ color: value });
 });
 
-SphereMesh2GUI.add(options, "wireframe").onChange((value) => {
-  sphereMesh2.material.setValues({ wireframe: value });
+sphereMeshGUI.add(options, "wireframe").onChange((value) => {
+  sphereMesh.material.setValues({ wireframe: value });
 });
 
-SphereMesh2GUI.add(options, "bouncingSpeed").onChange((value) => {
+sphereMeshGUI.add(options, "bouncingSpeed").onChange((value) => {
   options.bouncingSpeed = value;
 });
 
-SphereMesh2GUI.add(sphereMesh2.position, "z");
+sphereMeshGUI.add(sphereMesh.position, "z");
 
 const ambientLight = new THREE.AmbientLight("#ffffff", 1);
 scene.add(ambientLight);
@@ -104,15 +97,22 @@ scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight("#ffffff", 5);
 scene.add(directionalLight);
 
+const dLightHelper = new THREE.DirectionalLightHelper(directionalLight);
+scene.add(dLightHelper);
+
 // animate
 function animate(time) {
-  // elapsed time since start of the animation loop
+  // elapsed time since start of the animation loop = @param time
 
   boxMesh.rotation.x = time / 1000;
   boxMesh.rotation.y = time / 1000;
 
   options.bouncingStep += options.bouncingSpeed;
-  sphereMesh2.position.y = 10 * Math.abs(Math.sin(options.bouncingStep));
+  // sphereMesh.scale.x = 1 * Math.abs(Math.sin(options.bouncingStep));
+  // sphereMesh.scale.y = 1 * Math.abs(Math.sin(options.bouncingStep));
+  sphereMesh.scale.z = 1 * Math.abs(Math.sin(options.bouncingStep));
+
+  sphereMesh.position.y = 10 * Math.abs(Math.sin(options.bouncingStep));
 
   renderer.render(scene, camera);
 }
