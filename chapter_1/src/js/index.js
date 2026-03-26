@@ -4,6 +4,8 @@ import * as dat from "dat.gui";
 
 // create render
 const renderer = new THREE.WebGLRenderer();
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.append(renderer.domElement);
 
@@ -35,25 +37,26 @@ const boxMaterial = new THREE.MeshBasicMaterial({
   color: 0xff0000,
 });
 const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
-scene.add(boxMesh);
+// scene.add(boxMesh);
 
 // axes helper
 const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
+// scene.add(axesHelper);
 
 // plane
 const planeGeometry = new THREE.PlaneGeometry(30, 30);
-const planeMaterial = new THREE.MeshBasicMaterial({
+const planeMaterial = new THREE.MeshStandardMaterial({
   color: 0xffffff,
   side: THREE.DoubleSide,
 });
 const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
 planeMesh.rotation.x = -0.5 * Math.PI;
 scene.add(planeMesh);
+planeMesh.receiveShadow = true;
 
 // grid helper
 const gridHelper = new THREE.GridHelper(30);
-scene.add(gridHelper);
+// scene.add(gridHelper);
 
 // sphere
 const sphereGeometry = new THREE.SphereGeometry(2, 20, 20);
@@ -62,7 +65,9 @@ const sphereMaterial = new THREE.MeshStandardMaterial({
   // wireframe: true,
 });
 const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
-sphereMesh.position.x = 10;
+sphereMesh.castShadow = true;
+sphereMesh.position.x = 5;
+sphereMesh.position.y = 2;
 scene.add(sphereMesh);
 
 // dat gui
@@ -94,23 +99,31 @@ sphereMeshGUI.add(sphereMesh.position, "z");
 const ambientLight = new THREE.AmbientLight("#ffffff", 1);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight("#ffffff", 5);
+const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
 scene.add(directionalLight);
+directionalLight.position.set(10, 20, 0);
+directionalLight.castShadow = true;
+directionalLight.shadow.camera.bottom = -12;
 
-const dLightHelper = new THREE.DirectionalLightHelper(directionalLight);
+const dLightShadowHelper = new THREE.CameraHelper(
+  directionalLight.shadow.camera,
+);
+scene.add(dLightShadowHelper);
+
+const dLightHelper = new THREE.DirectionalLightHelper(directionalLight, 3);
 scene.add(dLightHelper);
 
 // animate
 function animate(time) {
   // elapsed time since start of the animation loop = @param time
 
-  boxMesh.rotation.x = time / 1000;
-  boxMesh.rotation.y = time / 1000;
+  // boxMesh.rotation.x = time / 1000;
+  // boxMesh.rotation.y = time / 1000;
 
   options.bouncingStep += options.bouncingSpeed;
   // sphereMesh.scale.x = 1 * Math.abs(Math.sin(options.bouncingStep));
   // sphereMesh.scale.y = 1 * Math.abs(Math.sin(options.bouncingStep));
-  sphereMesh.scale.z = 1 * Math.abs(Math.sin(options.bouncingStep));
+  // sphereMesh.scale.z = 1 * Math.abs(Math.sin(options.bouncingStep));
 
   sphereMesh.position.y = 10 * Math.abs(Math.sin(options.bouncingStep));
 
