@@ -22,7 +22,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 );
-camera.position.set(-20, 20, 50);
+camera.position.set(-10, 20, 40);
 
 // orbit control
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -56,7 +56,7 @@ planeMesh.receiveShadow = true;
 
 // grid helper
 const gridHelper = new THREE.GridHelper(30);
-// scene.add(gridHelper);
+scene.add(gridHelper);
 
 // sphere
 const sphereGeometry = new THREE.SphereGeometry(2, 20, 20);
@@ -96,22 +96,36 @@ sphereMeshGUI.add(options, "bouncingSpeed").onChange((value) => {
 
 sphereMeshGUI.add(sphereMesh.position, "z");
 
-const ambientLight = new THREE.AmbientLight("#ffffff", 1);
+// Ambient light
+const ambientLight = new THREE.AmbientLight("#ffffff", 0.3);
 scene.add(ambientLight);
 
+// Directional light
 const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
-scene.add(directionalLight);
 directionalLight.position.set(10, 20, 0);
 directionalLight.castShadow = true;
 directionalLight.shadow.camera.bottom = -12;
+// scene.add(directionalLight);
 
-const dLightShadowHelper = new THREE.CameraHelper(
+// Directional light Shadow Camera
+const dLightShadowCameraHelper = new THREE.CameraHelper(
   directionalLight.shadow.camera,
 );
-scene.add(dLightShadowHelper);
+// scene.add(dLightShadowCameraHelper);
 
 const dLightHelper = new THREE.DirectionalLightHelper(directionalLight, 3);
-scene.add(dLightHelper);
+// scene.add(dLightHelper);
+
+// Spot Light
+// Radian = (degree * Math.PI / 180)
+// Degree = (radian * 180 / Math.PI)
+const spotLight = new THREE.SpotLight("#ffff00", 1000, 0, (30 * Math.PI) / 180);
+spotLight.position.set(0, 10, 0);
+spotLight.castShadow = true;
+scene.add(spotLight);
+
+const sLightHelper = new THREE.SpotLightHelper(spotLight);
+scene.add(sLightHelper);
 
 // animate
 function animate(time) {
