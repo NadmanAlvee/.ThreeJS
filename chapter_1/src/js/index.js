@@ -78,6 +78,10 @@ const options = {
   wireframe: false,
   bouncingStep: 0,
   bouncingSpeed: 0.01,
+  spotLightColor: "#fff",
+  intensity: 50000,
+  angle: 0.1,
+  penumbra: 0,
 };
 
 const sphereMeshGUI = gui.addFolder("sphereMesh");
@@ -93,8 +97,6 @@ sphereMeshGUI.add(options, "wireframe").onChange((value) => {
 sphereMeshGUI.add(options, "bouncingSpeed").onChange((value) => {
   options.bouncingSpeed = value;
 });
-
-sphereMeshGUI.add(sphereMesh.position, "z");
 
 // Ambient light
 const ambientLight = new THREE.AmbientLight("#ffffff", 0.3);
@@ -119,13 +121,49 @@ const dLightHelper = new THREE.DirectionalLightHelper(directionalLight, 3);
 // Spot Light
 // Radian = (degree * Math.PI / 180)
 // Degree = (radian * 180 / Math.PI)
-const spotLight = new THREE.SpotLight("#ffff00", 1000, 0, (30 * Math.PI) / 180);
-spotLight.position.set(0, 10, 0);
+const spotLight = new THREE.SpotLight("#fff", 50000, 0, 0.1);
+spotLight.position.set(100, 100, 0);
 spotLight.castShadow = true;
 scene.add(spotLight);
 
 const sLightHelper = new THREE.SpotLightHelper(spotLight);
 scene.add(sLightHelper);
+
+const spotLightGUI = gui.addFolder("spotLight");
+
+spotLightGUI.addColor(options, "spotLightColor").onChange((value) => {
+  spotLight.color.set(value);
+});
+
+spotLightGUI
+  .add(options, "penumbra")
+  .min(0)
+  .max(1)
+  .step(0.01)
+  .onChange((value) => {
+    spotLight.penumbra = value;
+  });
+
+spotLightGUI
+  .add(options, "angle")
+  .min(0)
+  .max(Math.PI / 2)
+  .step(0.01)
+  .onChange((value) => {
+    spotLight.angle = value;
+  });
+
+spotLightGUI
+  .add(options, "intensity")
+  .min(0)
+  .max(100000)
+  .onChange((value) => {
+    spotLight.intensity = value;
+  });
+
+// fog
+// scene.fog = new THREE.Fog("#fff", 10, 200);
+scene.fog = new THREE.FogExp2("#fff", 0.005);
 
 // animate
 function animate(time) {
@@ -134,12 +172,15 @@ function animate(time) {
   // boxMesh.rotation.x = time / 1000;
   // boxMesh.rotation.y = time / 1000;
 
-  options.bouncingStep += options.bouncingSpeed;
-  // sphereMesh.scale.x = 1 * Math.abs(Math.sin(options.bouncingStep));
-  // sphereMesh.scale.y = 1 * Math.abs(Math.sin(options.bouncingStep));
-  // sphereMesh.scale.z = 1 * Math.abs(Math.sin(options.bouncingStep));
+  // options.bouncingStep += options.bouncingSpeed;
+  // sphereMesh.position.y = 10 * Math.abs(Math.sin(options.bouncingStep));
 
-  sphereMesh.position.y = 10 * Math.abs(Math.sin(options.bouncingStep));
+  // sphereMesh.position.x = 5 * Math.sin((90 * Math.PI) / 180);
+  sphereMesh.position.x = 5 * Math.cos(time / 500);
+  sphereMesh.position.z = 5 * Math.sin(time / 500);
+
+  // spotlight
+  sLightHelper.update();
 
   renderer.render(scene, camera);
 }
