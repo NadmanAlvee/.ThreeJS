@@ -54,7 +54,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 );
-camera.position.set(-10, 30, 60);
+camera.position.set(-10, 30, 40);
 
 // orbit control
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -85,7 +85,8 @@ const boxMultiMaterial = [
 
 const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
 const boxMesh = new THREE.Mesh(boxGeometry, boxMultiMaterial);
-boxMesh.position.y = 5;
+boxMesh.position.set(-20, 5, 0);
+boxMesh.castShadow = true;
 scene.add(boxMesh);
 boxMesh.name = "boxMesh";
 
@@ -94,30 +95,15 @@ const axesHelper = new THREE.AxesHelper(5);
 // scene.add(axesHelper);
 
 // plane
-const planeGeometry = new THREE.PlaneGeometry(30, 30);
+const planeGeometry = new THREE.PlaneGeometry(80, 80);
 const planeMaterial = new THREE.MeshStandardMaterial({
   color: 0xe5ff00,
   side: THREE.DoubleSide,
 });
 const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
 planeMesh.rotation.x = -0.5 * Math.PI;
-scene.add(planeMesh);
 planeMesh.receiveShadow = true;
-
-const plane2Geometry = new THREE.PlaneGeometry(7, 7, 10, 10);
-const plane2Material = new THREE.MeshBasicMaterial({
-  color: 0x0000ff,
-  wireframe: true,
-});
-const planeMesh2 = new THREE.Mesh(plane2Geometry, plane2Material);
-scene.add(planeMesh2);
-planeMesh2.position.set(10, 5, 10);
-planeMesh2.rotation.x = Math.PI * 0.5;
-
-// changing vertices position
-planeMesh2.geometry.attributes.position.array[0] = 10 * Math.random();
-planeMesh2.geometry.attributes.position.array[1] = 10 * Math.random();
-planeMesh2.geometry.attributes.position.array[2] = 10 * Math.random();
+// scene.add(planeMesh);
 
 // grid helper
 const gridHelper = new THREE.GridHelper(30);
@@ -137,8 +123,8 @@ const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
 sphereMesh.castShadow = true;
 sphereMesh.position.x = 5;
 sphereMesh.position.y = 2;
-scene.add(sphereMesh);
 sphereMesh.name = "sphereMesh";
+scene.add(sphereMesh);
 
 // dat gui
 const gui = new dat.GUI();
@@ -150,8 +136,11 @@ const options = {
   bouncingSpeed: 0.01,
   spotLightColor: "#fff",
   intensity: 50000,
-  angle: 0.2,
+  angle: 0.5,
   penumbra: 0,
+  waveAmplitudeX: 0.5,
+  waveAmplitudeY: 0.5,
+  waveCount: 0.7,
 };
 
 const sphereMeshGUI = gui.addFolder("sphereMesh");
@@ -191,7 +180,7 @@ const dLightHelper = new THREE.DirectionalLightHelper(directionalLight, 3);
 // Spot Light
 // Radian = (degree * Math.PI / 180)
 // Degree = (radian * 180 / Math.PI)
-const spotLight = new THREE.SpotLight("#fff", 50000, 0, 0.2);
+const spotLight = new THREE.SpotLight("#fff", 50000, 0, 0.5);
 spotLight.position.set(100, 100, 0);
 spotLight.castShadow = true;
 scene.add(spotLight);
@@ -235,6 +224,62 @@ spotLightGUI
 // scene.fog = new THREE.Fog("#fff", 10, 200);
 // scene.fog = new THREE.FogExp2("#fff", 0.005);
 
+const WaveGUI = gui.addFolder("Wave");
+WaveGUI.add(options, "waveAmplitudeX")
+  .min(0.1)
+  .max(5)
+  .onChange((value) => {
+    options.waveAmplitudeX = value;
+  });
+WaveGUI.add(options, "waveAmplitudeY")
+  .min(0.1)
+  .max(5)
+  .onChange((value) => {
+    options.waveAmplitudeY = value;
+  });
+WaveGUI.add(options, "waveCount")
+  .min(0.1)
+  .max(5)
+  .onChange((value) => {
+    options.waveCount = value;
+  });
+
+// Plane 2
+const plane2Geometry = new THREE.PlaneGeometry(15, 15, 20, 20);
+const plane2Material = new THREE.MeshBasicMaterial({
+  color: 0x00ffff,
+  wireframe: true,
+});
+const planeMesh2 = new THREE.Mesh(plane2Geometry, plane2Material);
+scene.add(planeMesh2);
+planeMesh2.position.set(0, 5, 10);
+planeMesh2.rotation.x = Math.PI * -0.5;
+// planeMesh2.castShadow = true;
+
+// changing vertices position
+// array element 0, 1, 2 represents the vertex 1's x y z
+// planeMesh2.geometry.attributes.position.array[0] = 10 * Math.random();
+// planeMesh2.geometry.attributes.position.array[1] = 10 * Math.random();
+// planeMesh2.geometry.attributes.position.array[2] = 10 * Math.random();
+
+// for (let i = 0; i < planeMesh2.geometry.attributes.position.array.length; i++) {
+//   planeMesh2.geometry.attributes.position.array[i] = 5 * Math.random();
+// }
+
+// plane 3
+const plane3Geometry = new THREE.PlaneGeometry(15, 15, 20, 20);
+const plane3Material = new THREE.MeshBasicMaterial({
+  color: 0xffffff,
+  wireframe: true,
+});
+const planeMesh3 = new THREE.Mesh(plane3Geometry, plane3Material);
+scene.add(planeMesh3);
+planeMesh3.position.set(20, 5, 10);
+planeMesh3.rotation.x = Math.PI * 0.5;
+
+// ✅ After creating planeMesh3 — snapshot original positions
+const originalPositions = planeMesh3.geometry.attributes.position.array.slice();
+
 // Mouse position
 const mousePosition = new THREE.Vector2(-10, -10);
 window.addEventListener("mousemove", (e) => {
@@ -262,8 +307,8 @@ function animate(time) {
   sphereMesh.rotation.y = time * 0.001;
 
   // Orbital path
-  sphereMesh.position.x = 30 * Math.sin(time * 0.0001);
-  sphereMesh.position.z = 30 * Math.cos(time * 0.0001);
+  sphereMesh.position.z = 40 * Math.cos(time * 0.0002);
+  sphereMesh.position.x = 40 * Math.sin(time * 0.0002);
 
   // spotlight
   sLightHelper.update();
@@ -279,7 +324,33 @@ function animate(time) {
     }
   }
 
-  // debug
+  // shader animation
+  const planeMesh2PositionArray = planeMesh2.geometry.attributes.position.array;
+  for (let i = 0; i < planeMesh2PositionArray.length; i += 3) {
+    planeMesh2PositionArray[i + 2] =
+      options.waveAmplitudeX *
+        Math.sin(planeMesh2PositionArray[i] * options.waveCount + time / 500) +
+      options.waveAmplitudeY *
+        Math.sin(
+          planeMesh2PositionArray[i + 1] * options.waveCount + time / 500,
+        );
+  }
+  // update the geometry
+  planeMesh2.geometry.attributes.position.needsUpdate = true;
+
+  // claude animation
+  const positions = planeMesh3.geometry.attributes.position.array;
+
+  for (let i = 0; i < positions.length; i += 3) {
+    const x = originalPositions[i]; // original X of this vertex
+    const y = originalPositions[i + 1]; // original Y of this vertex
+
+    // SET (not +=) z based on a wave using original x/y + time
+    positions[i + 2] =
+      Math.sin(x * 0.8 + time * 0.002) * 0.4 +
+      Math.cos(y * 0.8 + time * 0.002) * 0.4;
+  }
+  planeMesh3.geometry.attributes.position.needsUpdate = true;
 
   renderer.render(scene, camera);
 }
