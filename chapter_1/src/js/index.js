@@ -2,18 +2,50 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as dat from "dat.gui";
 
+// assets
+import nebula from "../assets/nebula.jpg";
+import stars from "../assets/stars.jpg";
+import stars_L from "../assets/stars_L.jpg";
+import stars_R from "../assets/stars_R.jpg";
+import milky_L from "../assets/milky_L.jpg";
+import milky_R from "../assets/milky_R.jpg";
+import nebulaCube from "../assets/nebulaCube.jpg";
+import starsCube from "../assets/starsCube.jpg";
+import earth from "../assets/earth.jpg";
+
 // create render
 const renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.append(renderer.domElement);
 
-// debug
-console.log(window.devicePixelRatio);
+// setting static background color
+// renderer.setClearColor("#ffea00");
 
 // create scene
 const scene = new THREE.Scene();
+
+// loading texture
+
+// 1. Static Texture
+const textureLoader = new THREE.TextureLoader();
+// const starsTexture = textureLoader.load(stars);
+// starsTexture.colorSpace = THREE.SRGBColorSpace;
+// scene.background = starsTexture;
+
+// 2. Cube Texture
+const cubeTextureLoader = new THREE.CubeTextureLoader();
+const cubeTexture = cubeTextureLoader.load([
+  milky_L,
+  stars_L,
+  stars_R,
+  stars_R,
+  stars_L,
+  milky_R,
+]);
+cubeTexture.colorSpace = THREE.SRGBColorSpace;
+scene.background = cubeTexture;
 
 // create camera
 const camera = new THREE.PerspectiveCamera(
@@ -22,7 +54,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 );
-camera.position.set(-10, 20, 40);
+camera.position.set(-10, 30, 60);
 
 // orbit control
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -32,12 +64,30 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.update();
 
 // box
-const boxGeometry = new THREE.BoxGeometry();
-const boxMaterial = new THREE.MeshBasicMaterial({
-  color: 0xff0000,
-});
-const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
-// scene.add(boxMesh);
+// Multi material
+// const boxMultiMaterial = [
+//   new THREE.MeshBasicMaterial({ map: textureLoader.load(nebula) }),
+//   new THREE.MeshBasicMaterial({ map: textureLoader.load(nebula) }),
+//   new THREE.MeshBasicMaterial({ map: textureLoader.load(stars) }),
+//   new THREE.MeshBasicMaterial({ map: textureLoader.load(stars) }),
+//   new THREE.MeshBasicMaterial({ map: textureLoader.load(nebula) }),
+//   new THREE.MeshBasicMaterial({ map: textureLoader.load(nebula) }),
+// ];
+
+const boxMultiMaterial = [
+  new THREE.MeshBasicMaterial({ color: "#ff0000" }),
+  new THREE.MeshBasicMaterial({ color: "#00ff22" }),
+  new THREE.MeshBasicMaterial({ color: "#4400ff" }),
+  new THREE.MeshBasicMaterial({ color: "#ff00dd" }),
+  new THREE.MeshBasicMaterial({ color: "#00ff95" }),
+  new THREE.MeshBasicMaterial({ color: "#ff7b00" }),
+];
+
+const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
+const boxMesh = new THREE.Mesh(boxGeometry, boxMultiMaterial);
+boxMesh.position.y = 5;
+scene.add(boxMesh);
+boxMesh.name = "boxMesh";
 
 // axes helper
 const axesHelper = new THREE.AxesHelper(5);
@@ -46,7 +96,7 @@ const axesHelper = new THREE.AxesHelper(5);
 // plane
 const planeGeometry = new THREE.PlaneGeometry(30, 30);
 const planeMaterial = new THREE.MeshStandardMaterial({
-  color: 0xffffff,
+  color: 0xe5ff00,
   side: THREE.DoubleSide,
 });
 const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -54,14 +104,33 @@ planeMesh.rotation.x = -0.5 * Math.PI;
 scene.add(planeMesh);
 planeMesh.receiveShadow = true;
 
+const plane2Geometry = new THREE.PlaneGeometry(7, 7, 10, 10);
+const plane2Material = new THREE.MeshBasicMaterial({
+  color: 0x0000ff,
+  wireframe: true,
+});
+const planeMesh2 = new THREE.Mesh(plane2Geometry, plane2Material);
+scene.add(planeMesh2);
+planeMesh2.position.set(10, 5, 10);
+planeMesh2.rotation.x = Math.PI * 0.5;
+
+// changing vertices position
+planeMesh2.geometry.attributes.position.array[0] = 10 * Math.random();
+planeMesh2.geometry.attributes.position.array[1] = 10 * Math.random();
+planeMesh2.geometry.attributes.position.array[2] = 10 * Math.random();
+
 // grid helper
 const gridHelper = new THREE.GridHelper(30);
-scene.add(gridHelper);
+// scene.add(gridHelper);
 
 // sphere
-const sphereGeometry = new THREE.SphereGeometry(2, 20, 20);
+const earthTexture = textureLoader.load(earth);
+earthTexture.colorSpace = THREE.SRGBColorSpace;
+
+const sphereGeometry = new THREE.SphereGeometry(5, 50, 50);
 const sphereMaterial = new THREE.MeshStandardMaterial({
-  color: 0xff00ff,
+  map: earthTexture,
+  // color: 0xa6ff00,
   // wireframe: true,
 });
 const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
@@ -69,6 +138,7 @@ sphereMesh.castShadow = true;
 sphereMesh.position.x = 5;
 sphereMesh.position.y = 2;
 scene.add(sphereMesh);
+sphereMesh.name = "sphereMesh";
 
 // dat gui
 const gui = new dat.GUI();
@@ -80,7 +150,7 @@ const options = {
   bouncingSpeed: 0.01,
   spotLightColor: "#fff",
   intensity: 50000,
-  angle: 0.1,
+  angle: 0.2,
   penumbra: 0,
 };
 
@@ -121,13 +191,13 @@ const dLightHelper = new THREE.DirectionalLightHelper(directionalLight, 3);
 // Spot Light
 // Radian = (degree * Math.PI / 180)
 // Degree = (radian * 180 / Math.PI)
-const spotLight = new THREE.SpotLight("#fff", 50000, 0, 0.1);
+const spotLight = new THREE.SpotLight("#fff", 50000, 0, 0.2);
 spotLight.position.set(100, 100, 0);
 spotLight.castShadow = true;
 scene.add(spotLight);
 
 const sLightHelper = new THREE.SpotLightHelper(spotLight);
-scene.add(sLightHelper);
+// scene.add(sLightHelper);
 
 const spotLightGUI = gui.addFolder("spotLight");
 
@@ -163,7 +233,17 @@ spotLightGUI
 
 // fog
 // scene.fog = new THREE.Fog("#fff", 10, 200);
-scene.fog = new THREE.FogExp2("#fff", 0.005);
+// scene.fog = new THREE.FogExp2("#fff", 0.005);
+
+// Mouse position
+const mousePosition = new THREE.Vector2(-10, -10);
+window.addEventListener("mousemove", (e) => {
+  // Normalizing into -1, 1
+  mousePosition.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mousePosition.y = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+
+const rayCaster = new THREE.Raycaster();
 
 // animate
 function animate(time) {
@@ -175,12 +255,31 @@ function animate(time) {
   // options.bouncingStep += options.bouncingSpeed;
   // sphereMesh.position.y = 10 * Math.abs(Math.sin(options.bouncingStep));
 
-  // sphereMesh.position.x = 5 * Math.sin((90 * Math.PI) / 180);
-  sphereMesh.position.x = 5 * Math.cos(time / 500);
-  sphereMesh.position.z = 5 * Math.sin(time / 500);
+  const axialTilt = 23.5 * (Math.PI / 180);
+  sphereMesh.rotation.z = axialTilt;
+
+  // Constant counter-clockwise rotation
+  sphereMesh.rotation.y = time * 0.001;
+
+  // Orbital path
+  sphereMesh.position.x = 30 * Math.sin(time * 0.0001);
+  sphereMesh.position.z = 30 * Math.cos(time * 0.0001);
 
   // spotlight
   sLightHelper.update();
+
+  // Ray caster
+  rayCaster.setFromCamera(mousePosition, camera);
+  const intersects = rayCaster.intersectObjects(scene.children);
+  console.log(intersects);
+  for (let i = 0; i < intersects.length; i++) {
+    if (intersects[i].object.name === "boxMesh") {
+      boxMesh.rotation.x = time / 1000;
+      boxMesh.rotation.y = time / 1000;
+    }
+  }
+
+  // debug
 
   renderer.render(scene, camera);
 }
