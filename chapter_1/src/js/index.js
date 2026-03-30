@@ -23,6 +23,27 @@ document.body.append(renderer.domElement);
 // setting static background color
 // renderer.setClearColor("#ffea00");
 
+const options = {
+  cameraX: 40,
+  cameraY: 30,
+  cameraZ: -40,
+
+  sphereColor: "#ffea00",
+  wireframe: false,
+  bouncingStep: 0,
+  bouncingSpeed: 0.01,
+  spotLightColor: "#fff",
+  intensity: 50000,
+  angle: 0.5,
+  penumbra: 0,
+  waveAmplitudeX: 0.5,
+  waveAmplitudeY: 0.5,
+  waveCount: 0.7,
+};
+
+// dat gui
+const gui = new dat.GUI();
+
 // create scene
 const scene = new THREE.Scene();
 
@@ -54,7 +75,17 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 );
-camera.position.set(-10, 30, 40);
+camera.position.set(options.cameraX, options.cameraY, options.cameraZ);
+const cameraGUI = gui.addFolder("Camera");
+cameraGUI.add(options, "cameraX").onChange((value) => {
+  camera.position.x = value;
+});
+cameraGUI.add(options, "cameraY").onChange((value) => {
+  camera.position.y = value;
+});
+cameraGUI.add(options, "cameraZ").onChange((value) => {
+  camera.position.z = value;
+});
 
 // orbit control
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -125,23 +156,6 @@ sphereMesh.position.x = 5;
 sphereMesh.position.y = 2;
 sphereMesh.name = "sphereMesh";
 scene.add(sphereMesh);
-
-// dat gui
-const gui = new dat.GUI();
-
-const options = {
-  sphereColor: "#ffea00",
-  wireframe: false,
-  bouncingStep: 0,
-  bouncingSpeed: 0.01,
-  spotLightColor: "#fff",
-  intensity: 50000,
-  angle: 0.5,
-  penumbra: 0,
-  waveAmplitudeX: 0.5,
-  waveAmplitudeY: 0.5,
-  waveCount: 0.7,
-};
 
 const sphereMeshGUI = gui.addFolder("sphereMesh");
 
@@ -266,7 +280,7 @@ planeMesh2.rotation.x = Math.PI * -0.5;
 //   planeMesh2.geometry.attributes.position.array[i] = 5 * Math.random();
 // }
 
-// plane 3
+// plane 3s
 const plane3Geometry = new THREE.PlaneGeometry(15, 15, 20, 20);
 const plane3Material = new THREE.MeshBasicMaterial({
   color: 0xffffff,
@@ -276,9 +290,29 @@ const planeMesh3 = new THREE.Mesh(plane3Geometry, plane3Material);
 scene.add(planeMesh3);
 planeMesh3.position.set(20, 5, 10);
 planeMesh3.rotation.x = Math.PI * 0.5;
-
-// ✅ After creating planeMesh3 — snapshot original positions
 const originalPositions = planeMesh3.geometry.attributes.position.array.slice();
+
+// Sphere 2
+const vShader = `
+  void main(){
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const fShader = `
+  void main(){
+    gl_FragColor = vec4(0.5, 0.5, 1.0, 1.0);
+  }
+`;
+
+const sphere2Geometry = new THREE.SphereGeometry(5);
+const sphere2Material = new THREE.ShaderMaterial({
+  vertexShader: vShader,
+  fragmentShader: fShader,
+});
+const sphere2Mesh = new THREE.Mesh(sphere2Geometry, sphere2Material);
+sphere2Mesh.position.z = -20;
+scene.add(sphere2Mesh);
 
 // Mouse position
 const mousePosition = new THREE.Vector2(-10, -10);
