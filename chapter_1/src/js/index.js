@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
 import * as dat from "dat.gui";
+
+const loader = new GLTFLoader();
 
 // assets
 import nebula from "../assets/nebula.jpg";
@@ -94,6 +98,25 @@ const controls = new OrbitControls(camera, renderer.domElement);
 // controls.enableZoom = false;
 controls.update();
 
+// axes helper
+const axesHelper = new THREE.AxesHelper(5);
+// scene.add(axesHelper);
+
+// plane
+const planeGeometry = new THREE.PlaneGeometry(80, 80);
+const planeMaterial = new THREE.MeshStandardMaterial({
+  color: 0xe5ff00,
+  side: THREE.DoubleSide,
+});
+const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+planeMesh.rotation.x = -0.5 * Math.PI;
+planeMesh.receiveShadow = true;
+scene.add(planeMesh);
+
+// grid helper
+const gridHelper = new THREE.GridHelper(30);
+// scene.add(gridHelper);
+
 // box
 // Multi material
 // const boxMultiMaterial = [
@@ -120,25 +143,6 @@ boxMesh.position.set(-20, 5, 0);
 boxMesh.castShadow = true;
 scene.add(boxMesh);
 boxMesh.name = "boxMesh";
-
-// axes helper
-const axesHelper = new THREE.AxesHelper(5);
-// scene.add(axesHelper);
-
-// plane
-const planeGeometry = new THREE.PlaneGeometry(80, 80);
-const planeMaterial = new THREE.MeshStandardMaterial({
-  color: 0xe5ff00,
-  side: THREE.DoubleSide,
-});
-const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-planeMesh.rotation.x = -0.5 * Math.PI;
-planeMesh.receiveShadow = true;
-// scene.add(planeMesh);
-
-// grid helper
-const gridHelper = new THREE.GridHelper(30);
-// scene.add(gridHelper);
 
 // sphere
 const earthTexture = textureLoader.load(earth);
@@ -314,6 +318,86 @@ const sphere2Mesh = new THREE.Mesh(sphere2Geometry, sphere2Material);
 sphere2Mesh.position.z = -20;
 scene.add(sphere2Mesh);
 
+// Tree 1 - GLB - NON Comporessed
+loader.load("/assets/models/Tree_1.glb", (gltf) => {
+  const model = gltf.scene;
+
+  model.position.set(10, 0, -10);
+
+  model.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      // child.receiveShadow = true;
+      child.material.side = THREE.DoubleSide;
+    }
+  });
+
+  // list all names
+  model.traverse((child) => {
+    if (child.isMesh) {
+      // console.log("Found mesh named:", child.name); // Check your browser console!
+    }
+  });
+
+  scene.add(model);
+});
+
+// Create your custom materials
+const leaf1Material = new THREE.MeshStandardMaterial({
+  color: 0x00ff00,
+  roughness: 1,
+  metalness: 0,
+  side: THREE.DoubleSide,
+});
+const leaf2Material = new THREE.MeshStandardMaterial({
+  color: 0xff0ef0,
+  roughness: 1,
+  metalness: 0,
+  side: THREE.DoubleSide,
+});
+
+const trunkMaterial = new THREE.MeshStandardMaterial({
+  color: 0x4d2926,
+  roughness: 1,
+});
+
+// Tree 2 - GLTF - NON Comporessed
+loader.load("/assets/models/Tree_1.gltf", (gltf) => {
+  const model = gltf.scene;
+
+  model.position.set(20, 0, -10);
+
+  model.traverse((child) => {
+    if (child.isMesh) {
+      // shadow
+      child.castShadow = true;
+      child.material.side = THREE.DoubleSide;
+      // list name
+      console.log("Found mesh named:", child.name, "child: ", child);
+
+      // set material
+      switch (child.name) {
+        case "Cube003": {
+          child.material = trunkMaterial;
+          break;
+        }
+        case "Cube003_1": {
+          child.material = leaf1Material;
+          break;
+        }
+        case "Cube003_2": {
+          child.material = leaf2Material;
+          break;
+        }
+      }
+    }
+  });
+
+  scene.add(model);
+});
+
+// Tree 3 - GLTF - Compressed
+
 // Mouse position
 const mousePosition = new THREE.Vector2(-10, -10);
 window.addEventListener("mousemove", (e) => {
@@ -350,7 +434,7 @@ function animate(time) {
   // Ray caster
   rayCaster.setFromCamera(mousePosition, camera);
   const intersects = rayCaster.intersectObjects(scene.children);
-  console.log(intersects);
+  // console.log(intersects);
   for (let i = 0; i < intersects.length; i++) {
     if (intersects[i].object.name === "boxMesh") {
       boxMesh.rotation.x = time / 1000;
@@ -393,3 +477,9 @@ renderer.setAnimationLoop(animate);
 
 // render one scene with camera
 // renderer.render(scene, camera);
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateWorldMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
