@@ -4,8 +4,6 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 import * as dat from "dat.gui";
 
-const loader = new GLTFLoader();
-
 // assets
 import nebula from "../assets/nebula.jpg";
 import stars from "../assets/stars.jpg";
@@ -19,13 +17,15 @@ import earth from "../assets/earth.jpg";
 
 // create render
 const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
-renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.append(renderer.domElement);
 
 // setting static background color
 // renderer.setClearColor("#ffea00");
+
+const loader = new GLTFLoader();
 
 const options = {
   cameraX: 40,
@@ -50,27 +50,6 @@ const gui = new dat.GUI();
 
 // create scene
 const scene = new THREE.Scene();
-
-// loading texture
-
-// 1. Static Texture
-const textureLoader = new THREE.TextureLoader();
-// const starsTexture = textureLoader.load(stars);
-// starsTexture.colorSpace = THREE.SRGBColorSpace;
-// scene.background = starsTexture;
-
-// 2. Cube Texture
-const cubeTextureLoader = new THREE.CubeTextureLoader();
-const cubeTexture = cubeTextureLoader.load([
-  milky_L,
-  stars_L,
-  stars_R,
-  stars_R,
-  stars_L,
-  milky_R,
-]);
-cubeTexture.colorSpace = THREE.SRGBColorSpace;
-scene.background = cubeTexture;
 
 // create camera
 const camera = new THREE.PerspectiveCamera(
@@ -97,6 +76,27 @@ const controls = new OrbitControls(camera, renderer.domElement);
 // controls.cursorStyle = "grab";
 // controls.enableZoom = false;
 controls.update();
+
+// loading texture
+
+// 1. Static Texture
+const textureLoader = new THREE.TextureLoader();
+// const starsTexture = textureLoader.load(stars);
+// starsTexture.colorSpace = THREE.SRGBColorSpace;
+// scene.background = starsTexture;
+
+// 2. Cube Texture
+const cubeTextureLoader = new THREE.CubeTextureLoader();
+const cubeTexture = cubeTextureLoader.load([
+  milky_L,
+  stars_L,
+  stars_R,
+  stars_R,
+  stars_L,
+  milky_R,
+]);
+cubeTexture.colorSpace = THREE.SRGBColorSpace;
+scene.background = cubeTexture;
 
 // axes helper
 const axesHelper = new THREE.AxesHelper(5);
