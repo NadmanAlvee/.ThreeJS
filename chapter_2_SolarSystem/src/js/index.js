@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as dat from "dat.gui";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 // assets
@@ -9,6 +10,7 @@ import milky_R from "../assets/milky_R.jpg";
 import sunTexture from "../assets/2k_sun.jpg";
 import mercuryTexture from "../assets/2k_mercury.jpg";
 import venusTexture from "../assets/2k_venus_surface.jpg";
+import earthTexture from "../assets/2k_earth.jpg";
 
 // renderer
 const renderer = new THREE.WebGLRenderer();
@@ -23,9 +25,9 @@ const camera = new THREE.PerspectiveCamera(
   45,
   window.innerWidth / window.innerHeight,
   0.1,
-  1000,
+  100000,
 );
-camera.position.set(0, 0, 300);
+// camera.position.set(0, 500, 4000);
 
 // orbit control
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -35,7 +37,8 @@ controls.update();
 const ambientLight = new THREE.AmbientLight(0x333333);
 scene.add(ambientLight);
 
-const pointLight = new THREE.PointLight(0xffaa00, 20000, 300);
+const pointLight = new THREE.PointLight(0xffaa00, 10, 10000);
+pointLight.decay = 0;
 scene.add(pointLight);
 
 // Solar System
@@ -72,36 +75,74 @@ function createPlanet(
   heightSegments,
   getTexture,
   textureSrc,
-  parentMesh,
+  isStar = false,
 ) {
   const planetGeo = new THREE.SphereGeometry(
     radius,
     widthSegments,
     heightSegments,
   );
-  planetMaterial = new THREE.MeshStandardMaterial({
+  const MaterialClass = isStar
+    ? THREE.MeshBasicMaterial
+    : THREE.MeshStandardMaterial;
+  const planetMaterial = new MaterialClass({
     map: getTexture(textureSrc),
   });
+  const planetMesh = new THREE.Mesh(planetGeo, planetMaterial);
+
+  if (!isStar) {
+    const centralBodyObj = new THREE.Object3D();
+    scene.add(centralBodyObj);
+    centralBodyObj.add(planetMesh);
+    centralBodyObj.position.set(0, 0, 0);
+
+    return {
+      centralBodyObj,
+      planetMesh,
+    };
+  } else {
+    scene.add(planetMesh);
+    return planetMesh;
+  }
 }
 
-// Sun
-const sunGeo = new THREE.SphereGeometry(16, 30, 30);
-const sunMat = new THREE.MeshBasicMaterial({
-  map: getTexture(sunTexture),
-});
-const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+// --- Sun (Massive relative to Earth) ---
+const sunMesh = createPlanet(655.8, 60, 60, getTexture, sunTexture, true);
 
-sunMesh.position.set(0, 0, 0);
-scene.add(sunMesh);
+// --- Mercury ---
+const MercuryObj = createPlanet(2.3, 30, 30, getTexture, mercuryTexture);
+MercuryObj.planetMesh.position.x = 920;
 
-// Mercury
+// --- Venus ---
+const VenusObj = createPlanet(5.7, 30, 30, getTexture, venusTexture);
+VenusObj.planetMesh.position.x = 1880;
+
+// --- Earth (Your target size) ---
+const EarthObj = createPlanet(6, 30, 30, getTexture, earthTexture);
+EarthObj.planetMesh.position.x = 2860;
+
+EarthObj.centralBodyObj.add(camera);
+camera.position.x = 2890;
+camera.position.y = 8;
+camera.position.z = 10;
+
+// Mars
+// const MarsObj = createPlanet(0.08, 10, 10, getTexture, marsTexture);
+// MarsObj.planetMesh.position.x = 5236;
 
 function animate(time) {
-  // Solar rotations
-  sunMesh.rotateY(0.004);
-  mercuryMesh.rotateY(0.006);
+  // Axial Rotation
+  sunMesh.rotateY(0.0004);
+  MercuryObj.planetMesh.rotateY(0.0004);
+  VenusObj.planetMesh.rotateY(0.0002);
+  EarthObj.planetMesh.rotateY(0.002);
 
-  // render
+  // Orbital Rotation
+  MercuryObj.centralBodyObj.rotateY(0.002);
+  VenusObj.centralBodyObj.rotateY(0.0015);
+  EarthObj.centralBodyObj.rotateY(0.001);
+
+  // Render updates
   controls.update();
   renderer.render(scene, camera);
 }
@@ -109,7 +150,15 @@ function animate(time) {
 renderer.setAnimationLoop(animate);
 
 window.addEventListener("resize", () => {
+  // 1. Update aspect ratio
   camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateWorldMatrix();
+
+  // 2. Recalculate the projection matrix
+  camera.updateProjectionMatrix();
+
+  // 3. Update renderer size
   renderer.setSize(window.innerWidth, window.innerHeight);
+
+  // 4. Handle high-DPI screens (Retina/4K)
+  renderer.setPixelRatio(window.devicePixelRatio);
 });
