@@ -86,13 +86,20 @@ const textureLoader = new THREE.TextureLoader();
 // scene.background = starsTexture;
 
 // 2. Cube Texture
+// -- order
+// +X (Positive X): Right
+// -X (Negative X): Left
+// +Y (Positive Y): Top
+// -Y (Negative Y): Bottom
+// +Z (Positive Z): Front
+// -Z (Negative Z): Back
 const cubeTextureLoader = new THREE.CubeTextureLoader();
 const cubeTexture = cubeTextureLoader.load([
   milky_L,
+  milky_L,
   stars_L,
-  stars_R,
-  stars_R,
   stars_L,
+  milky_R,
   milky_R,
 ]);
 cubeTexture.colorSpace = THREE.SRGBColorSpace;
