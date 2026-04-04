@@ -12,10 +12,12 @@ class World {
     this.controls = this.#initOrbitControl();
     this.gltfLoader = this.#initGltfLoader();
     this.mixer = null;
+    this.player = null;
 
     this.#initLights();
     this.#initBackground();
     this.#initObjects();
+    this.#initInput();
     this.#initPlayableCharacter();
 
     this.clock = new THREE.Timer();
@@ -48,7 +50,6 @@ class World {
       0.1,
       1000,
     );
-    camera.rotation.z = 5;
     return camera;
   }
 
@@ -107,6 +108,39 @@ class World {
     this.scene.add(planeMesh);
   }
 
+  // Get User Input
+  #initInput() {
+    window.addEventListener("keypress", (e) => {
+      if (this.currentTarget.name == "Player")
+        switch (e.key.toLocaleLowerCase()) {
+          case "w": {
+            this.currentTarget.position.z -= 2;
+            break;
+          }
+          case "a": {
+            console.log(e.key.toLocaleLowerCase());
+            break;
+          }
+          case "s": {
+            console.log(e.key.toLocaleLowerCase());
+            break;
+          }
+          case "d": {
+            console.log(e.key.toLocaleLowerCase());
+            break;
+          }
+          case "1": {
+            this.#playAnimation(this.playerGltf, "Waving");
+            break;
+          }
+          case "2": {
+            this.#playAnimation(this.playerGltf, "HeartEmote");
+            break;
+          }
+        }
+    });
+  }
+
   // Playable Character
   async #initPlayableCharacter() {
     // load character
@@ -114,16 +148,18 @@ class World {
       const playerGltf = await this.gltfLoader.loadAsync(
         "../models/LP_Person.glb",
       );
+      this.playerGltf = playerGltf;
+
+      console.log("Model Loaded: ", this.playerGltf);
+
       this.player = playerGltf.scene;
       this.scene.add(this.player);
+      this.player.name = "Player";
       this.currentTarget = this.player;
 
       // initial camera position setup
-      this.camera.position.set(0, 6, -8);
+      this.camera.position.set(0, 6, 8);
       this.controls.update();
-
-      // temporary animation play
-      this.#playAnimation(playerGltf, "HeartEmote");
     } catch (err) {
       console.log("Error Loading Player! ");
     }
