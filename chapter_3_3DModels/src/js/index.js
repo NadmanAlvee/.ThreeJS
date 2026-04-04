@@ -11,10 +11,14 @@ class World {
 
     this.controls = this.#initOrbitControl();
     this.gltfLoader = this.#initGltfLoader();
+    this.mixer = null;
 
     this.#initLights();
+    this.#initBackground();
     this.#initObjects();
+    this.#initPlayableCharacter();
 
+    this.clock = new THREE.Timer();
     this.#initAnimationLoop();
     this.#initResize();
   }
@@ -23,6 +27,7 @@ class World {
   #initRenderer() {
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     document.body.append(renderer.domElement);
@@ -43,13 +48,16 @@ class World {
       0.1,
       1000,
     );
-    camera.position.set(0, 5, -10);
+    camera.rotation.z = 5;
     return camera;
   }
 
   // Orbit Control
   #initOrbitControl() {
     const controls = new OrbitControls(this.camera, this.renderer.domElement);
+    controls.minDistance = 3;
+    controls.maxDistance = 20;
+    controls.maxPolarAngle = Math.PI / 2.1;
     controls.update();
     return controls;
   }
@@ -72,6 +80,19 @@ class World {
     this.scene?.add(directionalLight);
   }
 
+  // Background
+  #initBackground() {
+    this.scene.background = new THREE.Color(0xffffee);
+  }
+
+  #playAnimation(GltfModel, clipName) {
+    this.mixer = new THREE.AnimationMixer(GltfModel.scene);
+    const clips = GltfModel.animations;
+    const clip = THREE.AnimationClip.findByName(clips, clipName);
+    const action = this.mixer.clipAction(clip);
+    action.play();
+  }
+
   // Initiate Objects
   #initObjects() {
     // plane
@@ -84,15 +105,42 @@ class World {
     planeMesh.rotation.x = -0.5 * Math.PI;
     planeMesh.receiveShadow = true;
     this.scene.add(planeMesh);
-
-    this.gltfLoader.load("../models/LP_Person.glb", (gltf) => {
-      this.scene.add(gltf.scene);
-    });
   }
 
-  // Animate
+  // Playable Character
+  async #initPlayableCharacter() {
+    // load character
+    try {
+      const playerGltf = await this.gltfLoader.loadAsync(
+        "../models/LP_Person.glb",
+      );
+      this.player = playerGltf.scene;
+      this.scene.add(this.player);
+      this.currentTarget = this.player;
+
+      // initial camera position setup
+      this.camera.position.set(0, 6, -8);
+      this.controls.update();
+
+      // temporary animation play
+      this.#playAnimation(playerGltf, "HeartEmote");
+    } catch (err) {
+      console.log("Error Loading Player! ");
+    }
+  }
+
+  // Animate Scene
   #initAnimationLoop() {
-    this.renderer.setAnimationLoop(() => {
+    this.renderer.setAnimationLoop((time) => {
+      this.clock.update(time);
+
+      if (this.currentTarget) {
+        const lookAt = this.currentTarget.position.clone();
+        lookAt.y += 3;
+        this.controls.target.lerp(lookAt, 0.1);
+      }
+
+      this.mixer?.update(this.clock.getDelta());
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
     });
