@@ -30,7 +30,7 @@ class World {
 
   // Render
   #initRenderer() {
-    const renderer = new THREE.WebGLRenderer();
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -85,6 +85,8 @@ class World {
     const spotLight = new THREE.SpotLight("#fff", 1000, 0, 1);
     spotLight.position.set(0, 20, 0);
     spotLight.castShadow = true;
+    spotLight.shadow.mapSize.width = 2048;
+    spotLight.shadow.mapSize.height = 2048;
     this.scene.add(spotLight);
 
     const sLightHelper = new THREE.SpotLightHelper(spotLight);
@@ -110,9 +112,19 @@ class World {
     this.groundMesh.receiveShadow = true;
     this.scene.add(this.groundMesh);
 
+    // Contact Material
+    this.groundMat = new CANNON.Material();
+    this.sphereMat = new CANNON.Material();
+    this.world.addContactMaterial(
+      new CANNON.ContactMaterial(this.groundMat, this.sphereMat, {
+        restitution: 0.9,
+      }),
+    );
+
     this.groundPhysBody = new CANNON.Body({
       shape: new CANNON.Box(new CANNON.Vec3(20, 20, 0.1)),
       type: CANNON.BODY_TYPES.STATIC,
+      material: this.groundMat,
     });
     this.groundPhysBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
     this.world.addBody(this.groundPhysBody);
@@ -139,7 +151,7 @@ class World {
       rayCaster.ray.intersectPlane(plane, intersectionPoint);
 
       const sphereMesh = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 20, 20),
+        new THREE.SphereGeometry(0.5, 20, 20),
         new THREE.MeshStandardMaterial({
           color: Math.random() * 0xffffff,
         }),
@@ -149,14 +161,17 @@ class World {
       this.scene.add(sphereMesh);
 
       const spherePhysBody = new CANNON.Body({
-        shape: new CANNON.Sphere(1),
+        shape: new CANNON.Sphere(0.5),
         mass: 1,
+        material: this.sphereMat,
       });
       spherePhysBody.position.set(
         intersectionPoint.x,
         intersectionPoint.y + 5,
         intersectionPoint.z,
       );
+      // rotation in own axis
+      spherePhysBody.angularVelocity.set(0, 0.5, 1);
       this.world.addBody(spherePhysBody);
 
       this.objectsToUpdate.push({
