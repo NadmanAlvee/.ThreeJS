@@ -139,7 +139,7 @@ class World {
     });
     this.world.addBody(this.box1Body);
 
-    // ais resistance
+    // air resistance
     this.box1Body.linearDamping = 0.5;
     // rotation in own axis
     this.box1Body.angularVelocity.set(0, 0.5, 1);

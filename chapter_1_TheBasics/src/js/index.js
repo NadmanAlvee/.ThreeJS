@@ -187,7 +187,7 @@ const ambientLight = new THREE.AmbientLight("#ffffff", 0.3);
 scene.add(ambientLight);
 
 // Directional light
-const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
+const directionalLight = new THREE.DirectionalLight("#ffffff", 2);
 directionalLight.position.set(10, 20, 0);
 directionalLight.castShadow = true;
 directionalLight.shadow.camera.bottom = -12;
@@ -200,18 +200,18 @@ const dLightShadowCameraHelper = new THREE.CameraHelper(
 // scene.add(dLightShadowCameraHelper);
 
 const dLightHelper = new THREE.DirectionalLightHelper(directionalLight, 3);
-// scene.add(dLightHelper);
+scene.add(dLightHelper);
 
 // Spot Light
 // Radian = (degree * Math.PI / 180)
 // Degree = (radian * 180 / Math.PI)
-const spotLight = new THREE.SpotLight("#fff", 50000, 0, 0.5);
-spotLight.position.set(100, 100, 0);
+const spotLight = new THREE.SpotLight("#fff", 50000, 0, 0.9);
+spotLight.position.set(60, 60, 0);
 spotLight.castShadow = true;
 scene.add(spotLight);
 
 const sLightHelper = new THREE.SpotLightHelper(spotLight);
-// scene.add(sLightHelper);
+scene.add(sLightHelper);
 
 const spotLightGUI = gui.addFolder("spotLight");
 
