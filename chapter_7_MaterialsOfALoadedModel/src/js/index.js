@@ -14,8 +14,9 @@ class World {
 
     this.#initLights();
     this.#initBackground();
-    this.#initObjects();
+
     this.groundMesh = null;
+    this.#initObjects();
 
     this.#initAnimationLoop();
     this.#initResize();
@@ -46,7 +47,7 @@ class World {
       0.1,
       1000,
     );
-    camera.position.set(0, 15, 30);
+    camera.position.set(8, 5, 10);
     return camera;
   }
 
@@ -68,11 +69,11 @@ class World {
 
   // Background
   #initBackground() {
-    this.scene.background = new THREE.Color(0x000000);
+    this.scene.background = new THREE.Color(0xbee2ff);
   }
   // Lights
   #initLights() {
-    const ambientLight = new THREE.AmbientLight(0x333333);
+    const ambientLight = new THREE.AmbientLight(0xededed, 0.8);
     this.scene?.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight("#ffffff", 2);
@@ -83,18 +84,33 @@ class World {
   }
 
   // Initiate Objects
-  #initObjects() {
+  async #initObjects() {
     // ground
     const groundGeometry = new THREE.PlaneGeometry(40, 40);
-    const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x0000ff,
+    const groundMaterial = new THREE.MeshBasicMaterial({
+      color: 0x3f9b0b,
       side: THREE.DoubleSide,
-      wireframe: true,
+      // wireframe: true,
     });
     const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
+    groundMesh.rotateX(Math.PI / 2);
     this.groundMesh = groundMesh;
-    groundMesh.receiveShadow = true;
+    // groundMesh.receiveShadow = true;
     this.scene.add(this.groundMesh);
+
+    // donkey model
+    this.donkeyGltf = await this.gltfLoader.loadAsync("models/Donkey.gltf");
+    console.log(this.donkeyGltf);
+
+    // getObjectByName
+    this.donkeyGltf.scene
+      .getObjectByName("Cube")
+      .material.color.setHex(0xff0000);
+    this.donkeyGltf.scene
+      .getObjectByName("Cube_1")
+      .material.color.setHex(0xffff00);
+
+    this.scene.add(this.donkeyGltf.scene);
   }
 
   // Animate Scene
