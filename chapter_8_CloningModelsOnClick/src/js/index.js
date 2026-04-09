@@ -165,10 +165,6 @@ class World {
     this.animalGltf = await this.gltfLoader.loadAsync("models/Fox.gltf");
     this.foxScene = this.animalGltf.scene;
 
-    // animate fox
-    this.clips = this.animalGltf.animations;
-    console.log(this.clips);
-
     window.addEventListener("mousedown", (e) => {
       const objectExists = this.animalSceneClones.some((animalSceneClone) => {
         return (
@@ -182,17 +178,35 @@ class World {
         animalSceneClone.position.copy(this.highlightMesh.position);
         this.animalSceneClones.push(animalSceneClone);
         animalSceneClone.scale.set(0.4, 0.4, 0.4);
-
         this.scene.add(animalSceneClone);
+
+        // animating clone using separate mixer for every clone
+        const clips = this.animalGltf.animations;
+        console.log(clips);
+        const mixer = new THREE.AnimationMixer(animalSceneClone);
+        // const idleClip = THREE.AnimationClip.findByName(clips, "Idle");
+        const idleClip = THREE.AnimationClip.findByName(
+          clips,
+          clips[Math.floor(Math.random() * clips.length)].name,
+        );
+        const action = mixer.clipAction(idleClip);
+        action.play();
+        this.mixers.push(mixer);
       }
     });
   }
 
   // Animate Scene
   #initAnimationLoop() {
+    this.clock = new THREE.Timer();
     this.renderer.setAnimationLoop((time) => {
-      if (this.animalSceneClones.length > 0) {
-        // console.log(this.animalSceneClones.length);
+      this.clock.update(time);
+
+      // animation mixer
+      if (this.mixers.length > 0) {
+        this.mixers.forEach((mixer) => {
+          mixer.update(this.clock.getDelta());
+        });
       }
 
       this.controls.update();
