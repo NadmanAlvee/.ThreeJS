@@ -9,6 +9,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "devDependencies": {
+    "vite": "^8.0.8"
+  },
   "dependencies": {
     "cannon-es": "^0.20.0",
     "run": "^1.5.0",
