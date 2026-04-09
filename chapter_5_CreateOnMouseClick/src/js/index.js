@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as CANNON from "cannon-es";
-import { color } from "three/src/nodes/tsl/TSLCore.js";
 
 class World {
   // constructor
