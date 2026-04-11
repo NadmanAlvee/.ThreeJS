@@ -98,7 +98,7 @@ class World {
     directionalLight.position.set(10, 20, 0);
     directionalLight.castShadow = true;
     directionalLight.shadow.camera.bottom = -12;
-    // this.scene?.add(directionalLight);
+    this.scene?.add(directionalLight);
   }
 
   // Initiate Objects
