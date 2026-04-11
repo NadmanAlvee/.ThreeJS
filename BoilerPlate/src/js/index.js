@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 
 class World {
   // constructor
@@ -11,6 +12,7 @@ class World {
 
     this.controls = this.#initOrbitControl();
     this.gltfLoader = this.#initGltfLoader();
+    this.hdrTextureLoader = this.#hdrTextureLoader();
 
     this.#initLights();
     this.#initBackground();
@@ -66,9 +68,15 @@ class World {
     return gltfLoader;
   }
 
+  // hdr loader
+  #hdrTextureLoader() {
+    const hdrTextureLoader = new HDRLoader();
+    return hdrTextureLoader;
+  }
+
   // Background
   #initBackground() {
-    this.scene.background = new THREE.Color(0x000000);
+    this.scene.background = new THREE.Color(0xededed);
   }
   // Lights
   #initLights() {
@@ -89,9 +97,9 @@ class World {
     const groundMaterial = new THREE.MeshStandardMaterial({
       color: 0x0000ff,
       side: THREE.DoubleSide,
-      wireframe: true,
     });
     const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
+    groundMesh.rotateX(Math.PI / 2);
     this.groundMesh = groundMesh;
     groundMesh.receiveShadow = true;
     this.scene.add(this.groundMesh);
