@@ -9,11 +9,11 @@ class World {
     this.renderer = this.#initRenderer();
     this.scene = this.#initScene();
     this.camera = this.#initPerspectiveCamera();
-
     this.controls = this.#initOrbitControl();
+
+    this.loadingManager = this.#initLoadingManager();
     this.gltfLoader = this.#initGltfLoader();
     this.hdrTextureLoader = this.#initHdrTextureLoader();
-    this.loadingManager = this.#initLoadingManager();
 
     this.#initLights();
     this.#initBackground();
@@ -81,6 +81,30 @@ class World {
   // loading manager
   #initLoadingManager() {
     const loadingManager = new THREE.LoadingManager();
+
+    loadingManager.onStart = (url, loaded, itemsTotal) => {
+      console.log(`Started loading`);
+    };
+
+    const progressBar = document.getElementById("progress-bar");
+
+    loadingManager.onProgress = (url, loaded, itemsTotal) => {
+      console.log(`Loading ${loaded} of ${itemsTotal} resources. ${url}`);
+      progressBar.value = Math.abs((loaded / itemsTotal) * 100);
+    };
+
+    loadingManager.onError = (url) => {
+      console.log(`An error occured while loading! ${url}`);
+    };
+
+    const progressBarContainer = document.querySelector(
+      ".loading-progress-container",
+    );
+    loadingManager.onLoad = (url, loaded, itemsTotal) => {
+      console.log(`All resources have loaded.`);
+      progressBarContainer.style.display = "none";
+    };
+
     return loadingManager;
   }
 
@@ -88,6 +112,7 @@ class World {
   #initBackground() {
     this.scene.background = new THREE.Color(0x111111);
   }
+
   // Lights
   #initLights() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 1);

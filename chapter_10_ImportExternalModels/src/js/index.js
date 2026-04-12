@@ -9,8 +9,9 @@ class World {
     this.renderer = this.#initRenderer();
     this.scene = this.#initScene();
     this.camera = this.#initPerspectiveCamera();
-
     this.controls = this.#initOrbitControl();
+
+    this.loadingManager = this.#initLoadingManager();
     this.gltfLoader = this.#initGltfLoader();
     this.textureLoader = this.#initTextureLoader();
     this.hdrTextureLoader = this.#inithdrTextureLoader();
@@ -67,21 +68,40 @@ class World {
     return controls;
   }
 
+  // loading manager
+  #initLoadingManager() {
+    const loadingManager = new THREE.LoadingManager();
+
+    loadingManager.onStart = (url, i, itemsTotal) => {
+      console.log(`Started loading`);
+    };
+
+    loadingManager.onProgress = (url, i, itemsTotal) => {
+      console.log(`Loading ${i} of ${itemsTotal} resources. ${url}`);
+    };
+
+    loadingManager.onLoad = (url, i, itemsTotal) => {
+      console.log(`All resources have loaded.`);
+    };
+
+    return loadingManager;
+  }
+
   // Gltf Loader
   #initGltfLoader() {
-    const gltfLoader = new GLTFLoader();
+    const gltfLoader = new GLTFLoader(this.loadingManager);
     return gltfLoader;
   }
 
   // texture loader
   #initTextureLoader() {
-    const textureLoader = new THREE.TextureLoader();
+    const textureLoader = new THREE.TextureLoader(this.loadingManager);
     return textureLoader;
   }
 
   // hdr loader
   #inithdrTextureLoader() {
-    const hdrTextureLoader = new HDRLoader();
+    const hdrTextureLoader = new HDRLoader(this.loadingManager);
     return hdrTextureLoader;
   }
 
