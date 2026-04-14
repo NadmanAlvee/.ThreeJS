@@ -87,7 +87,7 @@ class World {
       "MR_INT-006_LoftIndustrialWindow_Griffintown.hdr",
     ];
     const hdrTexture = await this.hdrTextureLoader.loadAsync(
-      `./assets/${textureSrc[5]}`,
+      `./assets/${textureSrc[2]}`,
     );
 
     if (hdrTexture) {
