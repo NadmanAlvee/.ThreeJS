@@ -17,7 +17,7 @@ class World {
     this.gltfLoader = this.#initGltfLoader();
     this.hdrTextureLoader = this.#hdrTextureLoader();
 
-    this.#initLights();
+    // this.#initLights();
     this.#initBackground();
 
     this.entityManager = this.#yukaEntityManager();
@@ -101,14 +101,14 @@ class World {
 
   // Background
   #initBackground() {
-    this.scene.background = new THREE.Color(0xededed);
+    this.scene.background = new THREE.Color(0x0e0e0e);
   }
   // Lights
   #initLights() {
     const ambientLight = new THREE.AmbientLight(0x333333);
     this.scene?.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight("#ffffff", 2);
+    const directionalLight = new THREE.DirectionalLight("#dddddd", 2);
     directionalLight.position.set(10, 20, 0);
     directionalLight.castShadow = true;
     directionalLight.shadow.camera.bottom = -12;
@@ -155,27 +155,40 @@ class World {
     path.add(new YUKA.Vector3(4, 0, 4));
     path.add(new YUKA.Vector3(0, 0, 6));
 
+    path.loop = true;
+
     return path;
   }
 
   #displayPath() {
-    const positions = [];
+    const position = [];
 
     for (let i = 0; i < this.path._waypoints.length; i++) {
-      positions.push(this.path._waypoints[i].clone());
+      const waypoint = this.path._waypoints[i];
+      position.push(waypoint.x, waypoint.y, waypoint.z);
     }
-    console.log(positions);
 
-    const geometry = new THREE.BufferGeometry().setFromPoints(positions);
-    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial());
-    this.scene.add(line);
+    const lineGeometry = new THREE.BufferGeometry();
+    lineGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(position, 3),
+    );
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const lines = new THREE.LineLoop(lineGeometry, lineMaterial);
+    this.scene.add(lines);
   }
 
   #makeVehicleFollowPath() {
     this.vehicle.position.copy(this.path.current());
 
-    const followPath = new YUKA.FollowPathBehavior(this.path, 0.2);
+    const followPath = new YUKA.FollowPathBehavior(this.path, 1);
     this.vehicle.steering.add(followPath);
+
+    const onPathBehavior = new YUKA.OnPathBehavior(this.path);
+    onPathBehavior.radius = 0.8;
+    this.vehicle.steering.add(onPathBehavior);
+
+    this.vehicle.maxSpeed = 5;
   }
 
   // Animate Scene
