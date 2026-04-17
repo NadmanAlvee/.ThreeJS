@@ -4,6 +4,8 @@ import { FirstPersonControls } from "three/addons/controls/FirstPersonControls.j
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 
+import * as YUKA from "yuka";
+
 class World {
   // constructor
   constructor() {
@@ -17,8 +19,19 @@ class World {
 
     this.#initLights();
     this.#initBackground();
-    this.groundMesh = null;
+
+    this.entityManager = this.#yukaEntityManager();
+
+    this.vehicleMesh = null;
+    this.vehicle = null;
+    this.syncFunction = null;
     this.#initObjects();
+
+    this.path = this.#initPath();
+    this.#displayPath();
+    this.#makeVehicleFollowPath();
+
+    this.yukaTime = new YUKA.Time();
 
     this.#initAnimationLoop();
     this.#initResize();
@@ -51,7 +64,7 @@ class World {
       0.1,
       1000,
     );
-    camera.position.set(0, 15, 30);
+    camera.position.set(0, 15, 0);
     return camera;
   }
 
@@ -59,9 +72,6 @@ class World {
   #initControl() {
     // Orbit Control
     const controls = new OrbitControls(this.camera, this.renderer.domElement);
-    controls.minDistance = 3;
-    controls.maxDistance = 20;
-    controls.maxPolarAngle = Math.PI / 2.1;
     controls.update();
 
     // First Person Control
@@ -105,24 +115,76 @@ class World {
     this.scene?.add(directionalLight);
   }
 
+  #yukaEntityManager() {
+    const entityManager = new YUKA.EntityManager();
+    return entityManager;
+  }
+
   // Initiate Objects
   #initObjects() {
-    // ground
-    const groundGeometry = new THREE.PlaneGeometry(40, 40);
-    const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x0000ff,
-      side: THREE.DoubleSide,
-    });
-    const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
-    groundMesh.rotateX(Math.PI / 2);
-    this.groundMesh = groundMesh;
-    groundMesh.receiveShadow = true;
-    this.scene.add(this.groundMesh);
+    // entity vehicle cone
+    const vehicleGeometry = new THREE.ConeGeometry(0.1, 0.5, 8);
+    vehicleGeometry.rotateX(Math.PI * 0.5);
+    this.vehicleMesh = new THREE.Mesh(
+      vehicleGeometry,
+      new THREE.MeshNormalMaterial(),
+    );
+    this.vehicleMesh.matrixAutoUpdate = false;
+    this.scene.add(this.vehicleMesh);
+
+    // yuka body and sync fucntion
+    this.syncFunction = (entity, renderComponent) => {
+      renderComponent.matrix.copy(entity.worldMatrix);
+    };
+
+    this.vehicle = new YUKA.Vehicle();
+    this.vehicle.setRenderComponent(this.vehicleMesh, this.syncFunction);
+
+    this.entityManager.add(this.vehicle);
+  }
+
+  // yuka path
+  #initPath() {
+    const path = new YUKA.Path();
+    path.add(new YUKA.Vector3(-4, 0, 4));
+    path.add(new YUKA.Vector3(-6, 0, 0));
+    path.add(new YUKA.Vector3(-4, 0, -4));
+    path.add(new YUKA.Vector3(0, 0, 0));
+    path.add(new YUKA.Vector3(4, 0, -4));
+    path.add(new YUKA.Vector3(6, 0, 0));
+    path.add(new YUKA.Vector3(4, 0, 4));
+    path.add(new YUKA.Vector3(0, 0, 6));
+
+    return path;
+  }
+
+  #displayPath() {
+    const positions = [];
+
+    for (let i = 0; i < this.path._waypoints.length; i++) {
+      positions.push(this.path._waypoints[i].clone());
+    }
+    console.log(positions);
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(positions);
+    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial());
+    this.scene.add(line);
+  }
+
+  #makeVehicleFollowPath() {
+    this.vehicle.position.copy(this.path.current());
+
+    const followPath = new YUKA.FollowPathBehavior(this.path, 0.2);
+    this.vehicle.steering.add(followPath);
   }
 
   // Animate Scene
   #initAnimationLoop() {
     this.renderer.setAnimationLoop((time) => {
+      // yuka animate
+      const deltaTime = this.yukaTime.update().getDelta();
+      this.entityManager.update(deltaTime);
+
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
     });

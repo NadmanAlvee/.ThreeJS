@@ -20,7 +20,6 @@ class World {
     this.#initLights();
     this.#initBackground();
     this.#initObjects();
-    this.groundMesh = null;
 
     this.#ImmersiveViewer();
 
@@ -179,13 +178,13 @@ class World {
         case "1": {
           moveCamera({
             position: {
-              x: -0.5690165222223935,
-              y: 1.0487999999895692,
-              z: 13.27797291473903,
+              x: -0.56,
+              y: 1.04,
+              z: 13.27,
             },
             rotation: {
               x: -0,
-              y: 1.5471916562329344,
+              y: 1.54,
               z: -0,
             },
             posDuration: 2.6,
@@ -196,13 +195,13 @@ class World {
         case "2": {
           moveCamera({
             position: {
-              x: -1.9551721870680718,
-              y: 1.4743999999940396,
-              z: 5.515766060606381,
+              x: -1.95,
+              y: 1.47,
+              z: 5.51,
             },
             rotation: {
               x: -0,
-              y: 0.039004757749663735,
+              y: 0.03,
               z: -0,
             },
             posDuration: 2.6,
