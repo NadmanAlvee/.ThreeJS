@@ -25,11 +25,13 @@ class World {
     this.#initBackground();
 
     this.entityManager = this.#yukaEntityManager();
+    this.syncFunction = (entity, renderComponent) => {
+      renderComponent.matrix.copy(entity.worldMatrix);
+    };
 
     this.copVehicle = await this.#initCarModel();
     this.vehicleMesh = null;
     this.vehicle = null;
-    this.syncFunction = null;
     this.#initObjects();
 
     this.path = this.#initPath();
