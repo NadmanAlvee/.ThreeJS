@@ -19,6 +19,29 @@
   </style>
 </head>
 <body>
+  <div id="startScreen" style="
+    position: fixed; inset: 0; 
+    background: black; color: white; 
+    display: flex; align-items: center; 
+    justify-content: center; 
+    font-size: 24px; cursor: pointer;
+    z-index: 999;
+  ">
+    Click to Play 🚁
+  </div>
+
   <script src="./js/index.js" type="module"></script>
+  <script>
+    const startScreen = document.getElementById("startScreen");
+
+    startScreen.addEventListener("click", () => {
+      const audio = new Audio("./assets/HelicopterSoundEffect.mp3");
+      audio.volume = 0.3;
+      audio.loop = true;
+      audio.play();
+
+      startScreen.remove();
+    }, { once: true });
+  </script>
 </body>
 </html>

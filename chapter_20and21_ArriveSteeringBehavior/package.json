@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/js/index.js",
   "scripts": {
-    "dev": "cd src && npx vite"
+    "dev": "cd src && npx vite --port 3000 --host"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +13,7 @@
     "vite": "^8.0.8"
   },
   "dependencies": {
+    "gsap": "^3.15.0",
     "three": "^0.183.2",
     "yuka": "^0.7.8"
   }

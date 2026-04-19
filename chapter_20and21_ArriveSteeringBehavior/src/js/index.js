@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import GSAP from "gsap";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { FirstPersonControls } from "three/addons/controls/FirstPersonControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -13,7 +14,7 @@ class World {
     this.scene = this.#initScene();
     this.camera = this.#initPerspectiveCamera();
 
-    this.controls = this.#initControl();
+    // this.controls = this.#initControl();
     this.gltfLoader = this.#initGltfLoader();
     this.hdrTextureLoader = this.#hdrTextureLoader();
 
@@ -39,6 +40,8 @@ class World {
     this.#makeEntitySeekTarget();
 
     this.#initRayCasterAndPlane();
+
+    this.#initInput();
 
     this.yukaTime = new YUKA.Time();
     this.clock = new THREE.Timer();
@@ -69,12 +72,11 @@ class World {
   // Camera
   #initPerspectiveCamera() {
     const camera = new THREE.PerspectiveCamera(
-      45,
+      70,
       window.innerWidth / window.innerHeight,
       0.1,
       1000,
     );
-    camera.position.set(5, 5, 30);
     return camera;
   }
 
@@ -82,6 +84,7 @@ class World {
   #initControl() {
     // Orbit Control
     const controls = new OrbitControls(this.camera, this.renderer.domElement);
+    controls.enabled = false;
     controls.update();
 
     // First Person Control
@@ -95,6 +98,27 @@ class World {
     // controls.lookVertical = false;
 
     return controls;
+  }
+
+  #initInput() {
+    this.cameraAngle = 0;
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "a") {
+        GSAP.to(this, {
+          cameraAngle: this.cameraAngle - Math.PI / 4,
+          duration: 0.4,
+          ease: "power2.out",
+        });
+      }
+      if (e.key.toLowerCase() === "d") {
+        GSAP.to(this, {
+          cameraAngle: this.cameraAngle + Math.PI / 4,
+          duration: 0.4,
+          ease: "power2.out",
+        });
+      }
+    });
   }
 
   // Gltf Loader
@@ -120,7 +144,7 @@ class World {
 
   // Lights
   #initLights() {
-    const ambientLight = new THREE.AmbientLight(0x333333);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     this.scene?.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight("#dddddd", 2);
@@ -166,13 +190,13 @@ class World {
     this.vehicle = new YUKA.Vehicle();
     this.vehicle.setRenderComponent(this.helicopterPivot, this.syncFunction);
     this.vehicle.scale.set(0.3, 0.3, 0.3);
-    this.vehicle.maxSpeed = 20;
+    this.vehicle.maxSpeed = 10;
     this.entityManager.add(this.vehicle);
   }
 
   #initTarget() {
     const targetGeometry = new THREE.SphereGeometry(1);
-    const targetMaterial = new THREE.MeshPhongMaterial({ color: 0xffea00 });
+    const targetMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const taregtMesh = new THREE.Mesh(targetGeometry, targetMaterial);
     this.target = taregtMesh;
     this.scene.add(taregtMesh);
@@ -207,11 +231,11 @@ class World {
   }
 
   #makeEntitySeekTarget() {
-    const seekBehavior = new YUKA.ArriveBehavior(this.target.position, 3, 1);
+    const seekBehavior = new YUKA.ArriveBehavior(this.target.position, 3, 5);
     this.vehicle.steering.add(seekBehavior);
 
     //temp
-    this.vehicle.position.set(10, 0, -10);
+    this.vehicle.position.set(10, 0, -30);
   }
 
   // Animate Scene
@@ -224,7 +248,22 @@ class World {
       const deltaTime = this.yukaTime.update().getDelta();
       this.entityManager.update(deltaTime);
 
-      this.controls.update();
+      // TPP camera follow
+      const pos = this.vehicle.position;
+      const forward = this.vehicle.forward;
+
+      const baseAngle = Math.atan2(forward.x, forward.z);
+      const totalAngle = baseAngle + this.cameraAngle;
+
+      const distance = 15;
+      this.camera.position.set(
+        pos.x - Math.sin(totalAngle) * distance,
+        pos.y + 3,
+        pos.z - Math.cos(totalAngle) * distance,
+      );
+      this.camera.lookAt(pos.x, pos.y, pos.z);
+
+      // this.controls.update();
       this.renderer.render(this.scene, this.camera);
     });
   }
