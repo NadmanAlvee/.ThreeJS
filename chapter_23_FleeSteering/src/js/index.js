@@ -1,10 +1,9 @@
 import * as THREE from "three";
+import * as YUKA from "yuka";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { FirstPersonControls } from "three/addons/controls/FirstPersonControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
-
-import * as YUKA from "yuka";
 
 class World {
   // constructor
@@ -17,24 +16,19 @@ class World {
     this.gltfLoader = this.#initGltfLoader();
     this.hdrTextureLoader = this.#hdrTextureLoader();
 
-    // this.#initLights();
+    this.#initLights();
     this.#initBackground();
 
     this.entityManager = this.#yukaEntityManager();
-    this.syncFunction = (entity, renderComponent) => {
-      renderComponent.matrix.copy(entity.worldMatrix);
-    };
+    this.syncFunction = this.#yukaSyncFunction();
 
-    this.vehicleMesh = null;
-    this.vehicle = null;
+    this.vehicle;
     this.#initObjects();
-
-    this.path = this.#initPath();
-    this.#displayPath();
-    this.#makeVehicleFollowPath();
+    this.#initTarget();
+    this.#initFleeSteeringBehavior();
+    this.#initRayCasterAndPlane();
 
     this.yukaTime = new YUKA.Time();
-
     this.#initAnimationLoop();
     this.#initResize();
   }
@@ -66,13 +60,12 @@ class World {
       0.1,
       1000,
     );
-    camera.position.set(0, 15, 0);
+    camera.position.set(0, 5, 10);
     return camera;
   }
 
   // Orbit Control
   #initControl() {
-    // Orbit Control
     const controls = new OrbitControls(this.camera, this.renderer.domElement);
     controls.update();
 
@@ -93,14 +86,15 @@ class World {
 
   // Background
   #initBackground() {
-    this.scene.background = new THREE.Color(0x0e0e0e);
+    this.scene.background = new THREE.Color(0x161616);
   }
+
   // Lights
   #initLights() {
     const ambientLight = new THREE.AmbientLight(0x333333);
     this.scene?.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight("#dddddd", 2);
+    const directionalLight = new THREE.DirectionalLight("#ffffff", 2);
     directionalLight.position.set(10, 20, 0);
     directionalLight.castShadow = true;
     directionalLight.shadow.camera.bottom = -12;
@@ -112,75 +106,65 @@ class World {
     return entityManager;
   }
 
-  // Initiate Objects
-  #initObjects() {
-    // entity vehicle cone
-    const vehicleGeometry = new THREE.ConeGeometry(0.1, 0.5, 8);
-    vehicleGeometry.rotateX(Math.PI * 0.5);
-    this.vehicleMesh = new THREE.Mesh(
-      vehicleGeometry,
-      new THREE.MeshNormalMaterial(),
-    );
-    this.vehicleMesh.matrixAutoUpdate = false;
-    this.scene.add(this.vehicleMesh);
-
-    // yuka body and sync fucntion
-    this.syncFunction = (entity, renderComponent) => {
+  #yukaSyncFunction() {
+    return (entity, renderComponent) => {
       renderComponent.matrix.copy(entity.worldMatrix);
     };
+  }
 
-    this.vehicle = new YUKA.Vehicle();
-    this.vehicle.setRenderComponent(this.vehicleMesh, this.syncFunction);
+  // Initiate Objects
+  #initObjects() {
+    // vehicle
+    const vehicleGeometry = new THREE.ConeGeometry(0.1, 0.5, 8);
+    const vehicleMaterial = new THREE.MeshPhongMaterial();
+    const vehicleMesh = new THREE.Mesh(vehicleGeometry, vehicleMaterial);
+    vehicleMesh.matrixAutoUpdate = false;
+    vehicleGeometry.rotateX(Math.PI * 0.5);
+    this.scene.add(vehicleMesh);
 
+    // yuka body
+    const vehicle = new YUKA.Vehicle();
+    this.vehicle = vehicle;
+    this.vehicle.setRenderComponent(vehicleMesh, this.syncFunction);
     this.entityManager.add(this.vehicle);
-  }
-
-  // yuka path
-  #initPath() {
-    const path = new YUKA.Path();
-    path.add(new YUKA.Vector3(-4, 0, 4));
-    path.add(new YUKA.Vector3(-6, 0, 0));
-    path.add(new YUKA.Vector3(-4, 0, -4));
-    path.add(new YUKA.Vector3(0, 0, 0));
-    path.add(new YUKA.Vector3(4, 0, -4));
-    path.add(new YUKA.Vector3(6, 0, 0));
-    path.add(new YUKA.Vector3(4, 0, 4));
-    path.add(new YUKA.Vector3(0, 0, 6));
-
-    path.loop = true;
-
-    return path;
-  }
-
-  #displayPath() {
-    const position = [];
-
-    for (let i = 0; i < this.path._waypoints.length; i++) {
-      const waypoint = this.path._waypoints[i];
-      position.push(waypoint.x, waypoint.y, waypoint.z);
-    }
-
-    const lineGeometry = new THREE.BufferGeometry();
-    lineGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(position, 3),
-    );
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-    const lines = new THREE.LineLoop(lineGeometry, lineMaterial);
-    this.scene.add(lines);
-  }
-
-  #makeVehicleFollowPath() {
-    this.vehicle.position.copy(this.path.current());
-
-    const followPath = new YUKA.FollowPathBehavior(this.path, 1);
-    this.vehicle.steering.add(followPath);
-
-    const onPathBehavior = new YUKA.OnPathBehavior(this.path);
-    onPathBehavior.radius = 0.8;
-    this.vehicle.steering.add(onPathBehavior);
-
     this.vehicle.maxSpeed = 5;
+  }
+
+  #initTarget() {
+    const targetGeo = new THREE.SphereGeometry(0.2);
+    const targetMat = new THREE.MeshBasicMaterial();
+    const targetMesh = new THREE.Mesh(targetGeo, targetMat);
+    this.target = targetMesh;
+    this.scene.add(this.target);
+  }
+
+  #initFleeSteeringBehavior() {
+    const fleeSteeringBehavior = new YUKA.FleeBehavior(this.target.position, 2);
+    this.vehicle.steering.add(fleeSteeringBehavior);
+  }
+
+  #initRayCasterAndPlane() {
+    const mouse = new THREE.Vector2();
+    const intersectionPoint = new THREE.Vector3();
+    const planeNormal = new THREE.Vector3();
+    const plane = new THREE.Plane();
+    const rayCaster = new THREE.Raycaster();
+
+    window.addEventListener("click", (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      planeNormal.set(0, 1, 0);
+      plane.setFromNormalAndCoplanarPoint(
+        planeNormal,
+        new THREE.Vector3(0, 0, 0),
+      );
+
+      rayCaster.setFromCamera(mouse, this.camera);
+      rayCaster.ray.intersectPlane(plane, intersectionPoint);
+
+      this.target.position.copy(intersectionPoint);
+    });
   }
 
   // Animate Scene
