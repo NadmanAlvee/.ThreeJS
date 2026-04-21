@@ -17,7 +17,6 @@ class World {
 
     this.#initLights();
     this.#initBackground();
-    this.groundMesh = null;
     this.#initObjects();
 
     this.#initAnimationLoop();

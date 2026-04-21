@@ -41,7 +41,6 @@ class World {
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
     document.body.append(renderer.domElement);
     return renderer;
   }
