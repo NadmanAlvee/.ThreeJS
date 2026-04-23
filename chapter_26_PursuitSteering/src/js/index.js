@@ -133,6 +133,7 @@ class World {
     evaderVehicle.setRenderComponent(evaderMesh, this.syncFunction);
     this.evaderVehicle = evaderVehicle;
     this.entityManager.add(this.evaderVehicle);
+    evaderVehicle.maxSpeed = 2;
 
     // parsuer static mesh
     const parsuerGeo = new THREE.ConeGeometry(0.5, 2.5, 8);
@@ -146,10 +147,12 @@ class World {
     const parsuerVehicle = new YUKA.Vehicle();
     parsuerVehicle.setRenderComponent(parsuerMesh, this.syncFunction);
     this.entityManager.add(parsuerVehicle);
-    parsuerVehicle.maxSpeed = 10;
+    parsuerVehicle.maxSpeed = 2;
 
     // behaviors
-    parsuerVehicle.steering.add(new YUKA.PursuitBehavior(this.evaderVehicle));
+    parsuerVehicle.steering.add(
+      new YUKA.PursuitBehavior(this.evaderVehicle, 5),
+    );
   }
 
   #initRepositionOnClick() {
@@ -186,11 +189,11 @@ class World {
       const deltaTime = this.yukaTime.update().getDelta();
       this.entityManager.update(deltaTime);
 
-      // evader movement - incomplete
-      // this.evaderVehicle.position.x =
-      //   (this.evaderVehicle.position.x + 0.1) % 25;
-      // this.evaderVehicle.position.y =
-      //   (this.evaderVehicle.position.y + 0.1) % 20;
+      // evader movement
+      const elapsed = this.yukaTime.getElapsed();
+      this.evaderVehicle.position.x =
+        Math.cos(elapsed) * Math.sin(elapsed * 0.2) * 6;
+      this.evaderVehicle.position.y = Math.sin(elapsed * 0.8) * 6;
 
       // this.controls.update();
       this.renderer.render(this.scene, this.camera);
