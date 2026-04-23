@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as YUKA from "yuka";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { FirstPersonControls } from "three/addons/controls/FirstPersonControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -11,14 +12,21 @@ class World {
     this.scene = this.#initScene();
     this.camera = this.#initPerspectiveCamera();
 
-    this.controls = this.#initControl();
+    // this.controls = this.#initControl();
     this.gltfLoader = this.#initGltfLoader();
     this.hdrTextureLoader = this.#hdrTextureLoader();
 
     this.#initLights();
     this.#initBackground();
+
+    this.entityManager = this.#yukaEntityManager();
+    this.syncFunction = this.#yukaSyncFunction();
+
     this.#initObjects();
 
+    this.#initRepositionOnClick();
+
+    this.yukaTime = new YUKA.Time();
     this.#initAnimationLoop();
     this.#initResize();
   }
@@ -49,31 +57,19 @@ class World {
       0.1,
       1000,
     );
-    camera.position.set(0, 15, 30);
+    camera.position.set(0, 0, 50);
+    camera.lookAt(0, 0, 0);
     return camera;
   }
 
   // Orbit Control
-  #initControl() {
-    // Orbit Control
-    const controls = new OrbitControls(this.camera, this.renderer.domElement);
-    controls.minDistance = 3;
-    controls.maxDistance = 20;
-    controls.maxPolarAngle = Math.PI / 2.1;
-    controls.update();
+  // #initControl() {
+  //   // Orbit Control
+  //   const controls = new OrbitControls(this.camera, this.renderer.domElement);
+  //   controls.update();
 
-    // First Person Control
-    // const controls = new FirstPersonControls(
-    //   this.camera,
-    //   this.renderer.domElement,
-    // );
-    // controls.activeLook = false;
-    // controls.movementSpeed = 8;
-    // controls.lookSpeed = 0.08;
-    // controls.lookVertical = false;
-
-    return controls;
-  }
+  //   return controls;
+  // }
 
   // Gltf Loader
   #initGltfLoader() {
@@ -89,7 +85,7 @@ class World {
 
   // Background
   #initBackground() {
-    this.scene.background = new THREE.Color(0xededed);
+    this.scene.background = new THREE.Color(0x202020);
   }
   // Lights
   #initLights() {
@@ -103,25 +99,100 @@ class World {
     this.scene?.add(directionalLight);
   }
 
+  #yukaEntityManager() {
+    const entityManager = new YUKA.EntityManager();
+    return entityManager;
+  }
+
+  #yukaSyncFunction() {
+    return (entity, renderComponent) => {
+      renderComponent.matrix.copy(entity.worldMatrix);
+    };
+  }
+
   // Initiate Objects
   #initObjects() {
-    // ground
-    const groundGeometry = new THREE.PlaneGeometry(40, 40);
-    const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x0000ff,
-      side: THREE.DoubleSide,
+    // plane
+    const planeMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(50, 40, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }),
+    );
+    this.planeMesh = planeMesh;
+    this.scene.add(this.planeMesh);
+
+    // evader static mesh
+    const evaderGeo = new THREE.SphereGeometry(1);
+    const evaderMat = new THREE.MeshNormalMaterial();
+    const evaderMesh = new THREE.Mesh(evaderGeo, evaderMat);
+    this.scene.add(evaderMesh);
+    this.evaderMesh = evaderMesh;
+    evaderMesh.matrixAutoUpdate = false;
+
+    // evader yuka body
+    const evaderVehicle = new YUKA.Vehicle();
+    evaderVehicle.setRenderComponent(evaderMesh, this.syncFunction);
+    this.evaderVehicle = evaderVehicle;
+    this.entityManager.add(this.evaderVehicle);
+
+    // parsuer static mesh
+    const parsuerGeo = new THREE.ConeGeometry(0.5, 2.5, 8);
+    parsuerGeo.rotateX(Math.PI * 0.5);
+    const parsuerMat = new THREE.MeshNormalMaterial();
+    const parsuerMesh = new THREE.Mesh(parsuerGeo, parsuerMat);
+    this.scene.add(parsuerMesh);
+    parsuerMesh.matrixAutoUpdate = false;
+
+    // parsuer yuka body
+    const parsuerVehicle = new YUKA.Vehicle();
+    parsuerVehicle.setRenderComponent(parsuerMesh, this.syncFunction);
+    this.entityManager.add(parsuerVehicle);
+    parsuerVehicle.maxSpeed = 10;
+
+    // behaviors
+    parsuerVehicle.steering.add(new YUKA.PursuitBehavior(this.evaderVehicle));
+  }
+
+  #initRepositionOnClick() {
+    const mouse = {};
+    const rayCaster = new THREE.Raycaster();
+    let intersectionPoint = {};
+
+    window.addEventListener("mousemove", (e) => {
+      console.log(
+        "Prev Posi: ",
+        this.evaderMesh.position.x,
+        " ",
+        this.evaderMesh.position.y,
+      );
+
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      rayCaster.setFromCamera(mouse, this.camera);
+      const intersects = rayCaster.intersectObject(this.planeMesh);
+      if (intersects.length > 0) {
+        this.evaderVehicle.position.x = intersects[0].point.x;
+        this.evaderVehicle.position.y = intersects[0].point.y;
+      }
+
+      console.log("New Posi: ", this.evaderVehicle.position);
     });
-    const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
-    groundMesh.rotateX(Math.PI / 2);
-    this.groundMesh = groundMesh;
-    groundMesh.receiveShadow = true;
-    this.scene.add(this.groundMesh);
   }
 
   // Animate Scene
   #initAnimationLoop() {
     this.renderer.setAnimationLoop((time) => {
-      this.controls.update();
+      // yuka animation
+      const deltaTime = this.yukaTime.update().getDelta();
+      this.entityManager.update(deltaTime);
+
+      // evader movement - incomplete
+      // this.evaderVehicle.position.x =
+      //   (this.evaderVehicle.position.x + 0.1) % 25;
+      // this.evaderVehicle.position.y =
+      //   (this.evaderVehicle.position.y + 0.1) % 20;
+
+      // this.controls.update();
       this.renderer.render(this.scene, this.camera);
     });
   }
