@@ -21,6 +21,9 @@ class World {
     this.#initLights();
     this.#initBackground();
 
+    this.mixer = null;
+    this.clock = new THREE.Timer();
+
     await this.#initObjects();
 
     this.#initAnimationLoop();
@@ -53,7 +56,7 @@ class World {
       0.1,
       1000,
     );
-    camera.position.set(0, 15, 30);
+    camera.position.set(5, 5, 7);
     return camera;
   }
 
@@ -94,11 +97,58 @@ class World {
   }
 
   // Initiate Objects
-  async #initObjects() {}
+  async #initObjects() {
+    // floor
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(5),
+      new THREE.MeshBasicMaterial({ color: 0xeeeeee, side: THREE.DoubleSide }),
+    );
+    floor.rotateX(Math.PI / 2);
+    this.scene.add(floor);
+
+    // deer
+    this.deer = await this.gltfLoader.loadAsync(`./models/animals/Deer.gltf`);
+    this.deer.scene.scale.set(0.5, 0.5, 0.5);
+    this.deer.scene.traverse((node) => {
+      if (node.isMesh) {
+        node.castShadow = true;
+      }
+    });
+    this.scene.add(this.deer.scene);
+
+    this.clips = this.deer.animations;
+    console.log(this.clips);
+
+    this.mixer = new THREE.AnimationMixer(this.deer.scene);
+
+    const idleAnimation = THREE.AnimationClip.findByName(this.clips, "Idle");
+    const idleAction = this.mixer.clipAction(idleAnimation);
+    idleAction.play();
+    idleAction.loop = THREE.LoopOnce;
+
+    const walkAnimation = THREE.AnimationClip.findByName(this.clips, "Idle_2");
+    const walkAction = this.mixer.clipAction(walkAnimation);
+    walkAction.loop = THREE.LoopOnce;
+
+    this.mixer.addEventListener("finished", (e) => {
+      if (e.action._clip.name === "Idle") {
+        walkAction.reset();
+        walkAction.play();
+      }
+      if (e.action._clip.name === "Idle_2") {
+        idleAction.reset();
+        idleAction.play();
+      }
+    });
+  }
 
   // Animate Scene
   #initAnimationLoop() {
     this.renderer.setAnimationLoop((time) => {
+      this.clock.update(time);
+      const delta = this.clock.getDelta();
+      this.mixer.update(delta);
+
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
     });
