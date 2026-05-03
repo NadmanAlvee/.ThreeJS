@@ -47,6 +47,7 @@ class World {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
+
     document.body.append(renderer.domElement);
     return renderer;
   }
