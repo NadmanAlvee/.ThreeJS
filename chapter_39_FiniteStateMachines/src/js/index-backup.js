@@ -1,13 +1,9 @@
 // obrit control will break if the character moves
-// swordSlashState is not implemented
 
 import * as THREE from "three";
-import * as YUKA from "yuka";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
-
-import { Astro } from "./Astro.js";
 
 class World {
   // constructor
@@ -28,11 +24,7 @@ class World {
     this.#initLights();
     this.#initBackground();
 
-    this.entityManager = this.#initEntityManager();
-    this.syncFunction = (entity, renderComponent) => {
-      renderComponent.matrix.copy(entity.worldMatrix);
-    };
-
+    this.mixers = [];
     await this.#initObjects();
 
     this.clock = new THREE.Timer();
@@ -114,11 +106,6 @@ class World {
     this.scene?.add(directionalLight);
   }
 
-  #initEntityManager() {
-    const entityManager = new YUKA.EntityManager();
-    return entityManager;
-  }
-
   // Initiate Objects
   async #initObjects() {
     // human 1
@@ -132,79 +119,74 @@ class World {
       this.controls.target.copy(target);
       this.controls.update();
 
-      model.animations = gltf.animations;
-      console.log(model.animations);
-      const animations = new Map();
+      const animations = gltf.animations;
+      console.log(animations);
+
       const mixer = new THREE.AnimationMixer(model);
+      this.mixers.push(mixer);
 
-      const idleAction = mixer.clipAction("Idle");
-      idleAction.play();
-      idleAction.enabled = false;
+      const walkClip = THREE.AnimationClip.findByName(animations, "Walk");
+      this.walkAction = mixer.clipAction(walkClip);
+      this.walkAction.play();
 
-      const walkAction = mixer.clipAction("Walk");
-      walkAction.play();
-      walkAction.enabled = false;
+      const runClip = THREE.AnimationClip.findByName(animations, "Run");
+      this.runAction = mixer.clipAction(runClip);
+      // this.runAction.play();
 
-      const runAction = mixer.clipAction("Run");
-      runAction.play();
-      runAction.enabled = false;
+      // animations fade in fade out
+      window.addEventListener("mousedown", (e) => {
+        // this.walkAction.stop();
+        // this.runAction.play();
 
-      const swordSlashAction = mixer.clipAction("Sword_Slash");
-      swordSlashAction.play();
-      swordSlashAction.enabled = false;
-
-      animations.set("IDLE", idleAction);
-      animations.set("WALK", walkAction);
-      animations.set("RUN", runAction);
-      animations.set("SWORD_SLASH", swordSlashAction);
-
-      const astro = new Astro(mixer, animations);
-      this.entityManager.add(astro);
-
-      // keydown
-      window.addEventListener("keydown", (e) => {
-        // start walking
-        if (e.key.toLowerCase() == "w") {
-          astro.isWalking = true;
-          astro.isRunning = false;
-          astro.isIdle = false;
-        }
+        this.runAction.reset();
+        this.runAction.play();
+        this.walkAction.fadeOut(1);
+        this.runAction.fadeIn(1);
       });
 
-      // keydown
-      window.addEventListener("keydown", (e) => {
-        // start running and stop walking
-        if (e.key.toLowerCase() == "shift" && astro.isWalking) {
-          astro.isRunning = true;
-          astro.isWalking = false;
-        }
-      });
+      window.addEventListener("mouseup", (e) => {
+        // this.runAction.stop();
+        // this.walkAction.play();
 
-      // keyup
-      window.addEventListener("keyup", (e) => {
-        // start walking and stop running
-        if (e.key.toLowerCase() == "shift") {
-          if (astro.isRunning) {
-            astro.isWalking = true;
-            astro.isRunning = false;
-          }
-        }
-        // go to idle
-        if (e.key.toLowerCase() == "w") {
-          astro.isWalking = false;
-          astro.isRunning = false;
-          astro.isIdle = true;
-        }
+        this.walkAction.reset();
+        this.walkAction.play();
+        this.runAction.fadeOut(1);
+        this.walkAction.fadeIn(1);
       });
     });
   }
 
   // Animate Scene
   #initAnimationLoop() {
+    let counter = 0;
     this.renderer.setAnimationLoop((time) => {
       const delta = this.clock.getDelta();
       this.clock.update(time);
-      this.entityManager.update(delta);
+
+      if (this.mixers.length > 0) {
+        this.mixers.forEach((mixer) => {
+          mixer.update(delta);
+
+          // temp
+          counter += 0.02;
+          if (counter >= 0) {
+            // this.runAction.reset();
+            this.runAction.play();
+            this.walkAction.fadeOut(1);
+            this.runAction.fadeIn(1);
+          }
+
+          if (counter >= 3 && counter < 6) {
+            this.walkAction.reset();
+            this.walkAction.play();
+            this.runAction.fadeOut(1);
+            this.walkAction.fadeIn(1);
+          }
+          if (counter >= 6) {
+            counter = 0;
+          }
+        });
+      }
 
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
