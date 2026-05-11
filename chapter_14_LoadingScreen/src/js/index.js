@@ -100,7 +100,7 @@ class World {
     const progressBarContainer = document.querySelector(
       ".loading-progress-container",
     );
-    loadingManager.onLoad = (url, loaded, itemsTotal) => {
+    loadingManager.onLoad = () => {
       console.log(`All resources have loaded.`);
       progressBarContainer.style.display = "none";
     };
