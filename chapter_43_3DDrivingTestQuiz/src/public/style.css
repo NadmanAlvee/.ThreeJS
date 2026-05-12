@@ -1,7 +1,7 @@
 body {
   margin: 0;
   padding: 0;
-  background: black;
+  background: white;
 }
 
 canvas {
@@ -61,4 +61,66 @@ label {
 .header button:hover {
   background-color: white;
   color: black;
+}
+
+.questions {
+  position: absolute;
+  top: 1%;
+  left: 2%;
+}
+
+.questions p, ul{
+  color: white;
+  font-size: 1.8rem;
+}
+
+.questions p {
+  padding: 0.5rem;
+  background-color: black;
+  opacity: 0;
+}
+
+.questions ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 0;
+  display: inline-block;
+}
+
+.questions ul li  {
+  cursor: pointer;
+  padding: 0.5rem;
+  background-color: black;
+  transform: rotateX(90deg);
+}
+
+.questions ul li span:nth-child(2) {
+  background-size: cover;
+  width: 30px;
+  height: 30px;
+  display: inline-block;
+  margin-bottom: -5px;
+  margin-right: 0.3rem;
+}
+
+.explanation {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 1%;
+  width: 90%;
+  text-align: right;
+  opacity: 0;
+}
+
+.explanation button {
+  font-size: 1.4rem;
+}
+
+.explanation .text-wrapper p {
+  font-size: 1.6rem;
+  background-color: black;
+  color: white;
+  padding: 0.8rem;
+  text-align: left;
 }

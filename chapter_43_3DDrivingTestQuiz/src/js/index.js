@@ -45,6 +45,8 @@ class World {
     this.title = null;
 
     this.#startQuiz();
+    this.clicked = false;
+    this.#processAnswer();
 
     this.time = new YUKA.Time();
     this.#initAnimationLoop();
@@ -164,38 +166,6 @@ class World {
     return entityManager;
   }
 
-  // create car function
-  #createCarV(model, path, yRotation) {
-    const group = new THREE.Group();
-    this.scene.add(group);
-    group.matrixAutoUpdate = false;
-
-    const car = SkeletonUtils.clone(model);
-    group.add(car);
-
-    const v = new YUKA.Vehicle();
-    v.setRenderComponent(group, this.syncFunction);
-    this.entityManager.add(v);
-
-    const followPathBehavior = new YUKA.FollowPathBehavior(path, 2);
-    // path tolerance
-    const onPathBehavior = new YUKA.OnPathBehavior(path);
-    onPathBehavior.radius = 0.2;
-
-    v.position.copy(path.current());
-    v.maxSpeed = 5;
-    v.steering.add(followPathBehavior);
-    v.steering.add(onPathBehavior);
-
-    followPathBehavior.active = false;
-
-    // rotates the vehicle in y axis
-    v.rotation.fromEuler(0, yRotation, 0);
-
-    const vehicleAll = { vehicle: v, modelGroup: car };
-    return vehicleAll;
-  }
-
   // Initiate Objects
   async #initObjects() {
     // terrain model
@@ -204,38 +174,109 @@ class World {
       this.scene.add(model);
     });
 
+    // create car function
+    const createCarV = (model, path, yRotation) => {
+      const group = new THREE.Group();
+      this.scene.add(group);
+      group.matrixAutoUpdate = false;
+
+      const car = SkeletonUtils.clone(model);
+      group.add(car);
+
+      const v = new YUKA.Vehicle();
+      v.setRenderComponent(group, this.syncFunction);
+      this.entityManager.add(v);
+
+      const followPathBehavior = new YUKA.FollowPathBehavior(path, 2);
+      // path tolerance
+      const onPathBehavior = new YUKA.OnPathBehavior(path);
+      onPathBehavior.radius = 0.2;
+
+      v.position.copy(path.current());
+      v.maxSpeed = 5;
+      v.steering.add(followPathBehavior);
+      v.steering.add(onPathBehavior);
+
+      followPathBehavior.active = false;
+
+      // rotates the vehicle in y axis
+      v.rotation.fromEuler(0, yRotation, 0);
+
+      const vehicleAll = { vehicle: v, modelGroup: car };
+      return vehicleAll;
+    };
+
     // yellow cars
     this.gltfLoader.load("./static/SUV.glb", (glb) => {
       const model = glb.scene;
-      const v1 = this.#createCarV(model, YELLOWVEHICLESPATHS[0], Math.PI);
-      const v2 = this.#createCarV(model, YELLOWVEHICLESPATHS[1], Math.PI);
-      const v3 = this.#createCarV(model, YELLOWVEHICLESPATHS[2], Math.PI / 2);
-      const v4 = this.#createCarV(model, YELLOWVEHICLESPATHS[3], Math.PI);
-      const v5 = this.#createCarV(model, YELLOWVEHICLESPATHS[4], Math.PI / 2);
-      const v6 = this.#createCarV(model, YELLOWVEHICLESPATHS[5], Math.PI);
-      const v7 = this.#createCarV(model, YELLOWVEHICLESPATHS[6], Math.PI / 2);
+      const v1 = createCarV(model, YELLOWVEHICLESPATHS[0], Math.PI);
+      const v2 = createCarV(model, YELLOWVEHICLESPATHS[1], Math.PI);
+      const v3 = createCarV(model, YELLOWVEHICLESPATHS[2], Math.PI / 2);
+      const v4 = createCarV(model, YELLOWVEHICLESPATHS[3], Math.PI);
+      const v5 = createCarV(model, YELLOWVEHICLESPATHS[4], Math.PI / 2);
+      const v6 = createCarV(model, YELLOWVEHICLESPATHS[5], Math.PI);
+      const v7 = createCarV(model, YELLOWVEHICLESPATHS[6], Math.PI / 2);
     });
 
     // red cars
     this.gltfLoader.load("./static/red.glb", (glb) => {
       const model = glb.scene;
-      const v1 = this.#createCarV(model, REDVEHICLESPATHS[0], 0);
-      const v2 = this.#createCarV(model, REDVEHICLESPATHS[1], 0);
-      const v3 = this.#createCarV(model, REDVEHICLESPATHS[2], -Math.PI / 2);
-      const v4 = this.#createCarV(model, REDVEHICLESPATHS[3], 0);
-      const v5 = this.#createCarV(model, REDVEHICLESPATHS[4], Math.PI / 2);
-      const v6 = this.#createCarV(model, REDVEHICLESPATHS[5], 0);
-      const v7 = this.#createCarV(model, REDVEHICLESPATHS[6], Math.PI / 2);
+      const v1 = createCarV(model, REDVEHICLESPATHS[0], 0);
+      const v2 = createCarV(model, REDVEHICLESPATHS[1], 0);
+      const v3 = createCarV(model, REDVEHICLESPATHS[2], -Math.PI / 2);
+      const v4 = createCarV(model, REDVEHICLESPATHS[3], 0);
+      const v5 = createCarV(model, REDVEHICLESPATHS[4], Math.PI / 2);
+      const v6 = createCarV(model, REDVEHICLESPATHS[5], 0);
+      const v7 = createCarV(model, REDVEHICLESPATHS[6], Math.PI / 2);
     });
 
     // blue cars
     this.gltfLoader.load("./static/blue.glb", (glb) => {
       const model = glb.scene;
-      const v1 = this.#createCarV(model, BLUEVEHICLESPATHS[0], Math.PI / 2);
-      const v2 = this.#createCarV(model, BLUEVEHICLESPATHS[1], Math.PI / 2);
-      const v3 = this.#createCarV(model, BLUEVEHICLESPATHS[2], 0);
-      const v4 = this.#createCarV(model, BLUEVEHICLESPATHS[3], Math.PI / 2);
-      const v7 = this.#createCarV(model, BLUEVEHICLESPATHS[4], Math.PI);
+      const v1 = createCarV(model, BLUEVEHICLESPATHS[0], Math.PI / 2);
+      const v2 = createCarV(model, BLUEVEHICLESPATHS[1], Math.PI / 2);
+      const v3 = createCarV(model, BLUEVEHICLESPATHS[2], 0);
+      const v4 = createCarV(model, BLUEVEHICLESPATHS[3], Math.PI / 2);
+      const v7 = createCarV(model, BLUEVEHICLESPATHS[4], Math.PI);
+    });
+
+    // create arrow function
+    const createArrow = (arrowModel, position, yRotation = 0) => {
+      const arrow = SkeletonUtils.clone(arrowModel);
+      arrow.position.copy(position);
+      arrow.rotation.y = yRotation;
+
+      this.scene.add(arrow);
+    };
+
+    // Arrows
+    this.gltfLoader.load("./static/arrow.glb", (glb) => {
+      const model = glb.scene;
+
+      //Arrows for yelow cars
+      createArrow(model, new THREE.Vector3(5.91, 2, 125.92), Math.PI);
+      createArrow(model, new THREE.Vector3(6.21, 2, 30.19), 0.5 * Math.PI);
+      createArrow(model, new THREE.Vector3(93.03, 2, 24.5), Math.PI);
+      createArrow(model, new THREE.Vector3(102.5, 2, -66), -0.5 * Math.PI);
+      createArrow(model, new THREE.Vector3(11.86, 2, -75.86), Math.PI);
+      createArrow(model, new THREE.Vector3(5.97, 2, -161.04), -0.5 * Math.PI);
+      createArrow(model, new THREE.Vector3(-82.82, 2, -171.17), -Math.PI / 2);
+
+      //Arrows for red cars
+      createArrow(model, new THREE.Vector3(1.38, 2, 109.32), 0.5 * Math.PI);
+      createArrow(model, new THREE.Vector3(1.13, 2, 14.01), 0.5 * Math.PI);
+      createArrow(model, new THREE.Vector3(107.5, 2, 20.33), Math.PI);
+      createArrow(model, new THREE.Vector3(97.45, 2, -81.35));
+      createArrow(model, new THREE.Vector3(-3.55, 2, -71.24), Math.PI);
+      createArrow(model, new THREE.Vector3(1.45, 2, -175.84), -0.5 * Math.PI);
+      createArrow(model, new THREE.Vector3(-98.74, 2, -166.74), Math.PI / 2);
+
+      //Arrows for blue cars
+      createArrow(model, new THREE.Vector3(-3.55, 2, 119.5), 0.5 * Math.PI);
+      createArrow(model, new THREE.Vector3(-4.08, 2, 24.64), 0.5 * Math.PI);
+      createArrow(model, new THREE.Vector3(98.08, 2, 14.95));
+      createArrow(model, new THREE.Vector3(93.599, 2, -70.83), Math.PI);
+      createArrow(model, new THREE.Vector3(-88.88, 2, -160.78), Math.PI);
     });
   }
 
@@ -243,9 +284,18 @@ class World {
     this.startBtn = document.querySelector(".header button");
     this.title = document.querySelector(".header h1");
 
+    this.questions = document.querySelector(".questions p");
+    this.explanation = document.querySelector(".explanation");
+    this.nextQuestionsBtn = document.querySelector(".explanation button");
+
+    this.option1 = document.getElementById("option1");
+    this.option2 = document.getElementById("option2");
+    this.option3 = document.getElementById("option3");
+
     this.startBtn.addEventListener("click", (e) => {
       const tl = gsap.timeline();
 
+      // 1. Hide HUD 2. Show Ques 3. Show Options
       tl.to(this.startBtn, {
         autoAlpha: 0,
         y: "-=20",
@@ -275,8 +325,81 @@ class World {
             duration: 4,
           },
           0,
+        )
+        .to(
+          this.questions,
+          {
+            // question fade in animation
+            autoAlpha: 1,
+            duration: 0.2,
+          },
+          "+=0.7",
+        )
+        .to(
+          this.option1,
+          {
+            // options fade in animation
+            rotateX: 0,
+            duration: 0.2,
+          },
+          "+=2.5",
+        )
+        .to(
+          this.option2,
+          {
+            rotateX: 0,
+            duration: 0.2,
+          },
+          "+=0.5",
+        )
+        .to(
+          this.option3,
+          {
+            rotateX: 0,
+            duration: 0.2,
+          },
+          "+=0.5",
         );
     });
+  }
+
+  #processAnswer() {
+    this.option1Symbol = document.getElementById("a1-symbol");
+    this.option2Symbol = document.getElementById("a2-symbol");
+    this.option3Symbol = document.getElementById("a3-symbol");
+
+    const showAnswerSymbol = (opt1, opt2, opt3) => {
+      this.option1Symbol.style.backgroundImage = `url('./static/symbols/${opt1}.png')`;
+      this.option2Symbol.style.backgroundImage = `url('./static/symbols/${opt2}.png')`;
+      this.option3Symbol.style.backgroundImage = `url('./static/symbols/${opt3}.png')`;
+    };
+
+    const chooseAnswer = (option) => {
+      if (!this.clicked) {
+        showAnswerSymbol("correct", "incorrect", "incorrect");
+        option.style.backgroundColor = "white";
+        option.style.color = "black";
+        gsap.to(this.explanation, {
+          autoAlpha: 1,
+          y: "-=10",
+          duration: 0.5,
+        });
+        this.clicked = true;
+      }
+    };
+
+    this.option1.addEventListener(
+      "click",
+      chooseAnswer.bind(null, this.option1),
+    );
+    this.option2.addEventListener(
+      "click",
+      chooseAnswer.bind(null, this.option2),
+    );
+    this.option3.addEventListener(
+      "click",
+      chooseAnswer.bind(null, this.option3),
+    );
   }
 
   // Animate Scene
